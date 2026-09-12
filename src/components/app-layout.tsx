@@ -15,6 +15,7 @@ const mainNav = [
 
 const adminNav = [
   { to: "/gestion", label: "Gestión" },
+  { to: "/gastos", label: "Gastos" },
   { to: "/configuracion", label: "Configuración" },
 ];
 

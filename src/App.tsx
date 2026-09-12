@@ -15,6 +15,8 @@ import InscripcionDetail from "./pages/inscripciones/inscripcion-detail";
 import ComisionesPage from "./pages/comisiones/comisiones-page";
 import GestionPage from "./pages/gestion/gestion-page";
 import ConfiguracionPage from "./pages/configuracion/configuracion-page";
+import CrmPage from "./pages/crm/crm-page";
+import GastosPage from "./pages/gastos/gastos-page";
 
 const queryClient = new QueryClient();
 
@@ -63,7 +65,7 @@ export default function App() {
                   />
                 }
               />
-              <Route path="/crm" element={<PagePlaceholder title="CRM" />} />
+              <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
               <Route path="/reportes" element={<PagePlaceholder title="Reportes" />} />
 
@@ -72,6 +74,14 @@ export default function App() {
                 element={
                   <RequireAdmin>
                     <GestionPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/gastos"
+                element={
+                  <RequireAdmin>
+                    <GastosPage />
                   </RequireAdmin>
                 }
               />

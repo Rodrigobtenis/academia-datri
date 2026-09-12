@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { EditionRoster } from "../inscripciones/edition-roster";
+import { EditionExpenses } from "../gastos/edition-expenses";
 import { formatMoney } from "../../lib/money";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
@@ -135,6 +136,8 @@ export default function EditionDetail() {
               <p className="text-sm text-gray-400">—</p>
             )}
           </section>
+
+          {isAdmin && <EditionExpenses editionId={edition.id} />}
         </div>
       </div>
 

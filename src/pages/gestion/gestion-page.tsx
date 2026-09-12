@@ -7,6 +7,7 @@ import {
   getPendingTotal,
   getYearCollections,
 } from "../../lib/api/management";
+import { listProfitability } from "../../lib/api/profitability";
 import { GoalProgressCard } from "../../components/goal-progress-card";
 import { formatMoney, sumMoney } from "../../lib/money";
 
@@ -52,6 +53,11 @@ export default function GestionPage() {
   const { data: courseSummary } = useQuery({
     queryKey: ["mgmt-course-summary"],
     queryFn: getCourseTypeSummary,
+  });
+
+  const { data: profitability } = useQuery({
+    queryKey: ["mgmt-profitability"],
+    queryFn: listProfitability,
   });
 
   const currentAmount = parseFloat(current?.net_collected ?? "0");
@@ -121,10 +127,51 @@ export default function GestionPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Rentabilidad</h2>
-        <p className="text-sm text-gray-400">
-          Se completa en la Etapa 12 (Gastos) — ingresos, gastos, ganancia y margen por curso/edición/mes.
-        </p>
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Rentabilidad por edición</h2>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Edición</th>
+                <th className="text-left px-4 py-3 font-medium">Modalidad</th>
+                <th className="text-right px-4 py-3 font-medium">Ingresos</th>
+                <th className="text-right px-4 py-3 font-medium">Gastos</th>
+                <th className="text-right px-4 py-3 font-medium">Resultado</th>
+                <th className="text-right px-4 py-3 font-medium">Margen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {profitability?.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                    Sin datos todavía.
+                  </td>
+                </tr>
+              )}
+              {profitability
+                ?.slice()
+                .sort((a, b) => (b.edition_date ?? "").localeCompare(a.edition_date ?? ""))
+                .map((p) => {
+                  const income = parseFloat(p.income);
+                  const margin = income > 0 ? (parseFloat(p.profit) / income) * 100 : 0;
+                  return (
+                    <tr key={p.course_edition_id}>
+                      <td className="px-4 py-2 font-medium text-gray-900">
+                        {p.name || (p.edition_date ? new Date(p.edition_date).toLocaleDateString("es-AR") : "—")}
+                      </td>
+                      <td className="px-4 py-2 text-gray-600">{p.course_type_name}</td>
+                      <td className="px-4 py-2 text-right">{formatMoney(p.income)}</td>
+                      <td className="px-4 py-2 text-right">{formatMoney(p.expenses_total)}</td>
+                      <td className={`px-4 py-2 text-right font-medium ${parseFloat(p.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                        {formatMoney(p.profit)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-500">{income > 0 ? `${margin.toFixed(0)}%` : "—"}</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );
