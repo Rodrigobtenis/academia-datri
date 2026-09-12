@@ -33,6 +33,17 @@ export async function listEditions(courseTypeId: string) {
   return data as CourseEdition[];
 }
 
+export async function listEditionsInRange(start: string, end: string) {
+  const { data, error } = await supabase
+    .from("course_editions")
+    .select("*, course_types(id, name)")
+    .gte("start_date", start)
+    .lt("start_date", end)
+    .order("start_date", { ascending: true });
+  if (error) throw error;
+  return data as (CourseEdition & { course_types: { id: string; name: string } | null })[];
+}
+
 export async function getEdition(id: string) {
   const { data, error } = await supabase.from("course_editions").select("*").eq("id", id).single();
   if (error) throw error;

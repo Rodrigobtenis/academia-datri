@@ -7,6 +7,7 @@ import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { EditionRoster } from "../inscripciones/edition-roster";
 import { EditionExpenses } from "../gastos/edition-expenses";
+import { EditionAttendance } from "../asistencia/edition-attendance";
 import { formatMoney } from "../../lib/money";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
@@ -103,6 +104,8 @@ export default function EditionDetail() {
           </section>
 
           <EditionRoster editionId={edition.id} listPrice={edition.list_price} occupancy={occupancy} />
+
+          <EditionAttendance editionId={edition.id} />
         </div>
 
         <div className="space-y-6">

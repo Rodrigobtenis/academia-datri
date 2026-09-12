@@ -17,6 +17,7 @@ import GestionPage from "./pages/gestion/gestion-page";
 import ConfiguracionPage from "./pages/configuracion/configuracion-page";
 import CrmPage from "./pages/crm/crm-page";
 import GastosPage from "./pages/gastos/gastos-page";
+import AgendaPage from "./pages/agenda/agenda-page";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +37,7 @@ export default function App() {
               }
             >
               <Route path="/" element={<DashboardPage />} />
-              <Route path="/agenda" element={<PagePlaceholder title="Agenda" />} />
+              <Route path="/agenda" element={<AgendaPage />} />
               <Route path="/cursos" element={<CursosList />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />
               <Route path="/cursos/:courseTypeId/:editionId" element={<EditionDetail />} />
