@@ -7,6 +7,7 @@ import { Badge } from "../../components/ui/badge";
 import { Select } from "../../components/ui/field";
 import { LeadForm } from "./lead-form";
 import { LEAD_STATUS_COLORS, LEAD_STATUS_LABELS, type Lead, type LeadInput, type LeadStatus } from "../../types/lead";
+import { formatDateAR } from "../../lib/date-ar";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -74,6 +75,7 @@ export default function CrmPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
@@ -115,7 +117,7 @@ export default function CrmPage() {
                   <td className="px-4 py-2">
                     {lead.next_followup ? (
                       <span className={overdue ? "text-red-600 font-medium" : "text-gray-600"}>
-                        {new Date(lead.next_followup).toLocaleDateString("es-AR")}
+                        {formatDateAR(lead.next_followup)}
                       </span>
                     ) : (
                       "—"
@@ -140,6 +142,7 @@ export default function CrmPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <LeadForm

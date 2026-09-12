@@ -10,6 +10,7 @@ import {
 import { listProfitability } from "../../lib/api/profitability";
 import { GoalProgressCard } from "../../components/goal-progress-card";
 import { formatMoney, sumMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -101,6 +102,7 @@ export default function GestionPage() {
       <section>
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Facturación por modalidad</h2>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
@@ -123,12 +125,14 @@ export default function GestionPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 
       <section>
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Rentabilidad por edición</h2>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
@@ -157,7 +161,7 @@ export default function GestionPage() {
                   return (
                     <tr key={p.course_edition_id}>
                       <td className="px-4 py-2 font-medium text-gray-900">
-                        {p.name || (p.edition_date ? new Date(p.edition_date).toLocaleDateString("es-AR") : "—")}
+                        {p.name || formatDateAR(p.edition_date)}
                       </td>
                       <td className="px-4 py-2 text-gray-600">{p.course_type_name}</td>
                       <td className="px-4 py-2 text-right">{formatMoney(p.income)}</td>
@@ -171,6 +175,7 @@ export default function GestionPage() {
                 })}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
     </div>

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { listEditionsInRange } from "../../lib/api/courses";
+import { formatDateAR } from "../../lib/date-ar";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS } from "../../types/course";
@@ -121,6 +122,7 @@ export default function AgendaPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
@@ -145,7 +147,7 @@ export default function AgendaPage() {
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/cursos/${ed.course_type_id}/${ed.id}`)}
                 >
-                  <td className="px-4 py-2">{new Date(ed.start_date).toLocaleDateString("es-AR")}</td>
+                  <td className="px-4 py-2">{formatDateAR(ed.start_date)}</td>
                   <td className="px-4 py-2 font-medium text-gray-900">{ed.course_types?.name}</td>
                   <td className="px-4 py-2 text-gray-600">{ed.location || "—"}</td>
                   <td className="px-4 py-2 text-gray-600">{ed.max_students}</td>
@@ -156,6 +158,7 @@ export default function AgendaPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

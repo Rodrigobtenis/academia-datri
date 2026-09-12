@@ -39,6 +39,29 @@ export async function setAttendance(
   return data as AttendanceRecord;
 }
 
+export async function listAttendanceByStudent(studentId: string) {
+  const { data, error } = await supabase
+    .from("attendance")
+    .select("*, course_editions(name, start_date, course_type_id)")
+    .eq("student_id", studentId)
+    .order("attendance_date", { ascending: false });
+  if (error) throw error;
+  return data as (AttendanceRecord & {
+    course_editions: { name: string | null; start_date: string; course_type_id: string } | null;
+  })[];
+}
+
+export async function listCertificatesByStudent(studentId: string) {
+  const { data, error } = await supabase
+    .from("certificates")
+    .select("*, course_editions(name, start_date, course_type_id)")
+    .eq("student_id", studentId);
+  if (error) throw error;
+  return data as (CertificateRecord & {
+    course_editions: { name: string | null; start_date: string; course_type_id: string } | null;
+  })[];
+}
+
 export async function listCertificates(editionId: string) {
   const { data, error } = await supabase.from("certificates").select("*").eq("course_edition_id", editionId);
   if (error) throw error;

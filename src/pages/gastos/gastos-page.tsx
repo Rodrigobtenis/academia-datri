@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/field";
 import { ExpenseForm } from "./expense-form";
 import { formatMoney, sumMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
 
 const MONTHS = [
@@ -73,6 +74,7 @@ export default function GastosPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
@@ -101,11 +103,11 @@ export default function GastosPage() {
             )}
             {expenses?.map((e) => (
               <tr key={e.id}>
-                <td className="px-4 py-2">{new Date(e.expense_date).toLocaleDateString("es-AR")}</td>
+                <td className="px-4 py-2">{formatDateAR(e.expense_date)}</td>
                 <td className="px-4 py-2">{EXPENSE_CATEGORY_LABELS[e.category]}</td>
                 <td className="px-4 py-2 text-gray-600">{e.description || "—"}</td>
                 <td className="px-4 py-2 text-gray-600">
-                  {e.course_editions?.name || (e.course_editions ? new Date(e.course_editions.start_date).toLocaleDateString("es-AR") : "General")}
+                  {e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General")}
                 </td>
                 <td className="px-4 py-2 text-right font-medium">{formatMoney(e.amount)}</td>
                 <td className="px-4 py-2 text-right">
@@ -120,6 +122,7 @@ export default function GastosPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <ExpenseForm

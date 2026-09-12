@@ -9,6 +9,7 @@ import {
   setCertificateStatus,
 } from "../../lib/api/attendance";
 import { Select } from "../../components/ui/field";
+import { formatDateAR } from "../../lib/date-ar";
 import {
   ATTENDANCE_STATUS_LABELS,
   CERTIFICATE_STATUS_LABELS,
@@ -101,7 +102,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
               d === selectedDate ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {new Date(d).toLocaleDateString("es-AR")}
+            {formatDateAR(d)}
           </button>
         ))}
         <input
@@ -115,7 +116,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
       <div className="divide-y divide-gray-100">
         <div className="grid grid-cols-3 gap-4 pb-2 text-xs text-gray-400 uppercase">
           <span>Alumna</span>
-          <span>Asistencia ({new Date(selectedDate).toLocaleDateString("es-AR")})</span>
+          <span>Asistencia ({formatDateAR(selectedDate)})</span>
           <span>Certificado</span>
         </div>
         {activeEnrollments.map((e) => (

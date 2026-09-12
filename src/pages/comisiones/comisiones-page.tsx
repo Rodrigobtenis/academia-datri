@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getMonthlyCommissionDetail } from "../../lib/api/commissions";
 import { Select } from "../../components/ui/field";
 import { formatMoney, sumMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS } from "../../types/payment";
 
 const MONTHS = [
@@ -67,6 +68,7 @@ export default function ComisionesPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
@@ -98,7 +100,7 @@ export default function ComisionesPage() {
             )}
             {rows?.map((r) => (
               <tr key={r.payment_id}>
-                <td className="px-4 py-2">{new Date(r.payment_date).toLocaleDateString("es-AR")}</td>
+                <td className="px-4 py-2">{formatDateAR(r.payment_date)}</td>
                 <td className="px-4 py-2">{r.student_name}</td>
                 <td className="px-4 py-2">{r.course_name}</td>
                 <td className="px-4 py-2">{r.edition_label}</td>
@@ -123,6 +125,7 @@ export default function ComisionesPage() {
             </tfoot>
           )}
         </table>
+        </div>
       </div>
     </div>
   );

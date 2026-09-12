@@ -9,6 +9,7 @@ import { EditionRoster } from "../inscripciones/edition-roster";
 import { EditionExpenses } from "../gastos/edition-expenses";
 import { EditionAttendance } from "../asistencia/edition-attendance";
 import { formatMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
 
@@ -68,16 +69,14 @@ export default function EditionDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-gray-900">
-              {edition.name || `Edición del ${new Date(edition.start_date).toLocaleDateString("es-AR")}`}
+              {edition.name || `Edición del ${formatDateAR(edition.start_date)}`}
             </h1>
             <Badge color={EDITION_STATUS_COLORS[edition.status]}>
               {EDITION_STATUS_LABELS[edition.status]}
             </Badge>
             {full && <Badge color="red">CURSO COMPLETO</Badge>}
           </div>
-          <p className="text-sm text-gray-500 mt-1">
-            {new Date(edition.start_date).toLocaleDateString("es-AR")}
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{formatDateAR(edition.start_date)}</p>
         </div>
         {isAdmin && (
           <Button variant="secondary" onClick={() => setEditing(true)}>

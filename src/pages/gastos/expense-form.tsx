@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { listCourseTypes } from "../../lib/api/courses";
 import { supabase } from "../../lib/supabase";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
+import { formatDateAR } from "../../lib/date-ar";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -70,7 +71,7 @@ export function ExpenseForm({
                 return (
                   <option key={ed.id} value={ed.id}>
                     {typeName ? `${typeName} — ` : ""}
-                    {ed.name || new Date(ed.start_date).toLocaleDateString("es-AR")}
+                    {ed.name || formatDateAR(ed.start_date)}
                   </option>
                 );
               })}

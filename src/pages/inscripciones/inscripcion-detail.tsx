@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { PaymentForm } from "../pagos/payment-form";
 import { formatMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS } from "../../types/enrollment";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentInput } from "../../types/payment";
 import { useAuth } from "../../lib/auth-context";
@@ -75,7 +76,8 @@ export default function InscripcionDetail() {
         }
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
       >
-        ← {enrollment.course_editions?.name || "Edición"}
+        ← {enrollment.course_editions?.name ||
+          (enrollment.course_editions ? formatDateAR(enrollment.course_editions.start_date) : "Edición")}
       </button>
 
       <div className="flex items-start justify-between mb-6">
@@ -85,7 +87,7 @@ export default function InscripcionDetail() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {enrollment.course_editions?.name ||
-              (enrollment.course_editions && new Date(enrollment.course_editions.start_date).toLocaleDateString("es-AR"))}
+              (enrollment.course_editions && formatDateAR(enrollment.course_editions.start_date))}
           </p>
         </div>
         <Badge color={ENROLLMENT_STATUS_COLORS[enrollment.status]}>
@@ -153,7 +155,7 @@ export default function InscripcionDetail() {
             <div key={p.id} className="py-3 flex items-center justify-between text-sm">
               <div>
                 <div className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-900"}>
-                  {new Date(p.payment_date).toLocaleDateString("es-AR")} ·{" "}
+                  {formatDateAR(p.payment_date)} ·{" "}
                   {formatMoney(p.amount)} · {PAYMENT_TYPE_LABELS[p.payment_type]} ·{" "}
                   {PAYMENT_METHOD_LABELS[p.payment_method]}
                 </div>

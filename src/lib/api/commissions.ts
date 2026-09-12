@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { formatDateAR } from "../date-ar";
 import type { CommissionPaymentRow, CommissionRateEntry } from "../../types/commission";
 
 function monthRange(month: number, year: number) {
@@ -53,7 +54,7 @@ export async function getMonthlyCommissionDetail(month: number, year: number) {
       course_name: e?.course_editions?.course_types?.name ?? "—",
       edition_label:
         e?.course_editions?.name ||
-        (e?.course_editions ? new Date(e.course_editions.start_date).toLocaleDateString("es-AR") : "—"),
+        (e?.course_editions ? formatDateAR(e.course_editions.start_date) : "—"),
     } satisfies CommissionPaymentRow;
   });
 }

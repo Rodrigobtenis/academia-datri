@@ -246,7 +246,16 @@ export function EditionRoster({
                 <div className="flex gap-2">
                   <Button
                     variant="secondary"
-                    onClick={() => w.students && setPromoteStudent(w.students as Student)}
+                    onClick={() => {
+                      if (!w.students) return;
+                      if (full && !isAdmin) {
+                        window.alert(
+                          "El curso sigue completo — pedile a un admin que autorice superar el cupo para pasarla a inscripción."
+                        );
+                        return;
+                      }
+                      setPromoteStudent(w.students as Student);
+                    }}
                   >
                     Pasar a inscripción
                   </Button>
@@ -291,6 +300,7 @@ export function EditionRoster({
           defaultPrice={listPrice}
           saving={createMutation.isPending}
           presetStudent={promoteStudent}
+          overrideCapacity={full}
         />
       )}
 

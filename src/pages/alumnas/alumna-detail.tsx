@@ -4,11 +4,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getStudent, updateStudent } from "../../lib/api/students";
 import { listEnrollmentsByStudent } from "../../lib/api/enrollments";
 import { listPaymentsByStudent } from "../../lib/api/payments";
+import { listAttendanceByStudent, listCertificatesByStudent } from "../../lib/api/attendance";
+import { ATTENDANCE_STATUS_LABELS, CERTIFICATE_STATUS_LABELS } from "../../types/attendance";
 import { sumMoney } from "../../lib/money";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { StudentForm } from "./student-form";
 import { formatMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import {
   STUDENT_SOURCE_LABELS,
   STUDENT_STATUS_LABELS,
@@ -53,6 +56,18 @@ export default function AlumnaDetail() {
   const { data: payments } = useQuery({
     queryKey: ["student-payments", id],
     queryFn: () => listPaymentsByStudent(id!),
+    enabled: Boolean(id),
+  });
+
+  const { data: attendance } = useQuery({
+    queryKey: ["student-attendance", id],
+    queryFn: () => listAttendanceByStudent(id!),
+    enabled: Boolean(id),
+  });
+
+  const { data: certificates } = useQuery({
+    queryKey: ["student-certificates", id],
+    queryFn: () => listCertificatesByStudent(id!),
     enabled: Boolean(id),
   });
 
@@ -147,7 +162,7 @@ export default function AlumnaDetail() {
                 >
                   <span className="text-sm text-gray-800">
                     {e.course_editions?.name ||
-                      (e.course_editions ? new Date(e.course_editions.start_date).toLocaleDateString("es-AR") : "—")}
+                      (e.course_editions ? formatDateAR(e.course_editions.start_date) : "—")}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">{formatMoney(e.final_price)}</span>
@@ -192,7 +207,7 @@ export default function AlumnaDetail() {
               {payments?.map((p) => (
                 <div key={p.id} className="py-2 flex items-center justify-between text-sm">
                   <span className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-700"}>
-                    {new Date(p.payment_date).toLocaleDateString("es-AR")} · {formatMoney(p.amount)}
+                    {formatDateAR(p.payment_date)} · {formatMoney(p.amount)}
                   </span>
                   <button
                     className="text-xs text-brand-600 hover:text-brand-700"
@@ -208,8 +223,36 @@ export default function AlumnaDetail() {
 
         <div className="space-y-6">
           <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">Asistencia y certificados</h2>
-            <p className="text-sm text-gray-400">Etapa 9 (Asistencia / Certificados).</p>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Asistencia</h2>
+            {(!attendance || attendance.length === 0) ? (
+              <p className="text-sm text-gray-400">Sin registros de asistencia.</p>
+            ) : (
+              <div className="space-y-1">
+                {attendance.map((a) => (
+                  <div key={a.id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">{formatDateAR(a.attendance_date)}</span>
+                    <span className="text-gray-800">{ATTENDANCE_STATUS_LABELS[a.status]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Certificados</h2>
+            {(!certificates || certificates.length === 0) ? (
+              <p className="text-sm text-gray-400">Sin certificados.</p>
+            ) : (
+              <div className="space-y-1">
+                {certificates.map((c) => (
+                  <div key={c.id} className="flex justify-between text-sm">
+                    <span className="text-gray-600">
+                      {c.course_editions?.name || (c.course_editions ? formatDateAR(c.course_editions.start_date) : "—")}
+                    </span>
+                    <span className="text-gray-800">{CERTIFICATE_STATUS_LABELS[c.status]}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
           <section className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">Alta</h2>

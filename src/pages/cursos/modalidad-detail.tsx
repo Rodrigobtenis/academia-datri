@@ -11,6 +11,7 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEdition, type CourseEditionInput } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
 
@@ -88,14 +89,14 @@ export default function ModalidadDetail() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-900">
-                    {ed.name || `Edición del ${new Date(ed.start_date).toLocaleDateString("es-AR")}`}
+                    {ed.name || `Edición del ${formatDateAR(ed.start_date)}`}
                   </span>
                   <Badge color={EDITION_STATUS_COLORS[ed.status]}>
                     {EDITION_STATUS_LABELS[ed.status]}
                   </Badge>
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {new Date(ed.start_date).toLocaleDateString("es-AR")}
+                  {formatDateAR(ed.start_date)}
                   {ed.location ? ` · ${ed.location}` : ""}
                   {ed.teacher ? ` · ${ed.teacher}` : ""}
                   {" · "}

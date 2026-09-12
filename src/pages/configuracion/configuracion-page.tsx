@@ -2,9 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCommissionRate, getCurrentCommissionRate, listCommissionRateHistory } from "../../lib/api/commissions";
 import { getGoalProgress, upsertGoal } from "../../lib/api/goals";
-import { Field, TextInput } from "../../components/ui/field";
+import { listAllProfiles, updateProfileActive, updateProfileName, updateProfileRole } from "../../lib/api/profiles";
+import { Field, TextInput, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
 import { formatMoney } from "../../lib/money";
+import { formatDateAR } from "../../lib/date-ar";
+import { useAuth } from "../../lib/auth-context";
+import type { Role } from "../../types/profile";
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -14,6 +19,9 @@ const MONTHS = [
 export default function ConfiguracionPage() {
   const now = new Date();
   const queryClient = useQueryClient();
+  const { profile: myProfile } = useAuth();
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
 
   const [goalMonth, setGoalMonth] = useState(now.getMonth() + 1);
   const [goalYear, setGoalYear] = useState(now.getFullYear());
@@ -36,6 +44,29 @@ export default function ConfiguracionPage() {
   const { data: rateHistory } = useQuery({
     queryKey: ["commission-rate-history"],
     queryFn: listCommissionRateHistory,
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ["all-profiles"],
+    queryFn: listAllProfiles,
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: Role }) => updateProfileRole(id, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["all-profiles"] }),
+  });
+
+  const activeMutation = useMutation({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) => updateProfileActive(id, active),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["all-profiles"] }),
+  });
+
+  const nameMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => updateProfileName(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-profiles"] });
+      setEditingNameId(null);
+    },
   });
 
   const goalMutation = useMutation({
@@ -177,12 +208,85 @@ export default function ConfiguracionPage() {
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
             {rateHistory.map((r) => (
               <div key={r.id} className="flex justify-between text-sm text-gray-600">
-                <span>Desde {new Date(r.effective_from).toLocaleDateString("es-AR")}</span>
+                <span>Desde {formatDateAR(r.effective_from)}</span>
                 <span className="font-medium">{r.rate_percent}%</span>
               </div>
             ))}
           </div>
         )}
+      </section>
+
+      <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-sm font-semibold text-gray-900 mb-1">Usuarios</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Para crear un usuario nuevo, agregalo primero en Supabase (Authentication → Users) con su
+          email y contraseña — acá le asignás el nombre, el rol y podés desactivarlo.
+        </p>
+        <div className="space-y-3">
+          {users?.map((u) => (
+            <div
+              key={u.id}
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 border-b border-gray-100 last:border-0"
+            >
+              <div className="w-48 shrink-0">
+                {editingNameId === u.id ? (
+                  <div className="flex items-center gap-2">
+                    <TextInput
+                      autoFocus
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      className="!py-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => nameMutation.mutate({ id: u.id, name: nameDraft })}
+                      disabled={nameMutation.isPending}
+                    >
+                      Guardar
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-left text-sm font-medium text-gray-900 hover:text-brand-600"
+                    onClick={() => {
+                      setEditingNameId(u.id);
+                      setNameDraft(u.full_name ?? "");
+                    }}
+                  >
+                    {u.full_name || "Sin nombre — asignar"}
+                  </button>
+                )}
+                {u.id === myProfile?.id && <span className="text-xs text-gray-400 ml-1">(vos)</span>}
+              </div>
+
+              <Select
+                value={u.role}
+                onChange={(e) => roleMutation.mutate({ id: u.id, role: e.target.value as Role })}
+                disabled={u.id === myProfile?.id}
+                className="!py-1 text-xs w-32 shrink-0"
+              >
+                <option value="admin">Admin</option>
+                <option value="empleada">Empleada</option>
+              </Select>
+
+              <div className="shrink-0">
+                {u.active ? <Badge color="green">Activo</Badge> : <Badge color="gray">Inactivo</Badge>}
+              </div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={u.id === myProfile?.id}
+                onClick={() => activeMutation.mutate({ id: u.id, active: !u.active })}
+                className="ml-auto shrink-0"
+              >
+                {u.active ? "Desactivar" : "Activar"}
+              </Button>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

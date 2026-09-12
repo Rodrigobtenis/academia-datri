@@ -53,6 +53,7 @@ export default function AlumnasList() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
             <tr>
@@ -95,6 +96,7 @@ export default function AlumnasList() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <StudentForm
