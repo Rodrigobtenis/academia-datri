@@ -6,6 +6,7 @@ import { listEnrollmentsByStudent } from "../../lib/api/enrollments";
 import { listPaymentsByStudent } from "../../lib/api/payments";
 import { listAttendanceByStudent, listCertificatesByStudent } from "../../lib/api/attendance";
 import { ATTENDANCE_STATUS_LABELS, CERTIFICATE_STATUS_LABELS } from "../../types/attendance";
+import { DocumentsCard } from "../../components/documents-card";
 import { sumMoney } from "../../lib/money";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -254,6 +255,8 @@ export default function AlumnaDetail() {
               </div>
             )}
           </section>
+          <DocumentsCard studentId={student.id} />
+
           <section className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">Alta</h2>
             <InfoRow label="Fecha de alta" value={new Date(student.created_at).toLocaleDateString("es-AR")} />

@@ -11,6 +11,7 @@ import { formatDateAR } from "../../lib/date-ar";
 import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS } from "../../types/enrollment";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentInput } from "../../types/payment";
 import { useAuth } from "../../lib/auth-context";
+import { DocumentsCard } from "../../components/documents-card";
 
 export default function InscripcionDetail() {
   const { enrollmentId } = useParams<{ enrollmentId: string }>();
@@ -172,6 +173,10 @@ export default function InscripcionDetail() {
           ))}
         </div>
       </section>
+
+      <div className="mt-6">
+        <DocumentsCard enrollmentId={enrollmentId} />
+      </div>
 
       <PaymentForm
         open={registering}
