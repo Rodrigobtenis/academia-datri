@@ -38,6 +38,10 @@ export default function App() {
               <Route path="/cursos" element={<CursosList />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />
               <Route path="/cursos/:courseTypeId/:editionId" element={<EditionDetail />} />
+              <Route
+                path="/cursos/:courseTypeId/:editionId/inscripciones/:enrollmentId"
+                element={<InscripcionDetail />}
+              />
               <Route path="/alumnas" element={<AlumnasList />} />
               <Route path="/alumnas/:id" element={<AlumnaDetail />} />
               <Route

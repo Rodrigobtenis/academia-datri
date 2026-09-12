@@ -75,7 +75,6 @@ export default function EditionDetail() {
           </div>
           <p className="text-sm text-gray-500 mt-1">
             {new Date(edition.start_date).toLocaleDateString("es-AR")}
-            {edition.end_date ? ` al ${new Date(edition.end_date).toLocaleDateString("es-AR")}` : ""}
           </p>
         </div>
         {isAdmin && (
@@ -90,51 +89,19 @@ export default function EditionDetail() {
           <section className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos de la edición</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <InfoRow label="Horario" value={edition.start_time ? `${edition.start_time} - ${edition.end_time ?? ""}` : null} />
               <InfoRow label="Sede" value={edition.location} />
               <InfoRow label="Docente" value={edition.teacher} />
               <InfoRow label="Precio" value={formatMoney(edition.list_price)} />
-              <InfoRow label="Precio promocional" value={edition.promo_price ? formatMoney(edition.promo_price) : null} />
             </div>
+            {edition.materials && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h3 className="text-xs text-gray-400 mb-1">Materiales incluidos</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.materials}</p>
+              </div>
+            )}
           </section>
 
-          {(edition.description || edition.includes || edition.materials || edition.requirements) && (
-            <section className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-              {edition.description && (
-                <div>
-                  <h3 className="text-xs text-gray-400 mb-1">Descripción</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.description}</p>
-                </div>
-              )}
-              {edition.includes && (
-                <div>
-                  <h3 className="text-xs text-gray-400 mb-1">Qué incluye</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.includes}</p>
-                </div>
-              )}
-              {edition.materials && (
-                <div>
-                  <h3 className="text-xs text-gray-400 mb-1">Materiales incluidos</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.materials}</p>
-                </div>
-              )}
-              {edition.requirements && (
-                <div>
-                  <h3 className="text-xs text-gray-400 mb-1">Requisitos</h3>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.requirements}</p>
-                </div>
-              )}
-            </section>
-          )}
-
-          {isAdmin && edition.internal_notes && (
-            <section className="bg-amber-50 rounded-xl border border-amber-200 p-6">
-              <h3 className="text-xs text-amber-600 mb-1">Observaciones internas</h3>
-              <p className="text-sm text-amber-900 whitespace-pre-wrap">{edition.internal_notes}</p>
-            </section>
-          )}
-
-          <EditionRoster editionId={edition.id} listPrice={edition.promo_price ?? edition.list_price} occupancy={occupancy} />
+          <EditionRoster editionId={edition.id} listPrice={edition.list_price} occupancy={occupancy} />
         </div>
 
         <div className="space-y-6">

@@ -6,13 +6,13 @@ export function parseMoney(value: string | number | null | undefined): number {
   return typeof value === "number" ? value : parseFloat(value);
 }
 
+// Intl.NumberFormat con style:"currency" inserta un espacio entre "$" y el número en es-AR
+// (ej. "$ 100.000"); acá lo armamos a mano para que quede pegado: "$100.000".
 export function formatMoney(value: string | number | null | undefined): string {
   const n = parseMoney(value);
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
+  const sign = n < 0 ? "-" : "";
+  const formatted = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Math.abs(n));
+  return `${sign}$${formatted}`;
 }
 
 export function formatPercent(value: number, decimals = 0): string {

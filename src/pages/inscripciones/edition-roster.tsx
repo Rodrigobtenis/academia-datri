@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { createEnrollment, getBalancesByEdition, listEnrollmentsByEdition, updateEnrollment } from "../../lib/api/enrollments";
+import { createPayment } from "../../lib/api/payments";
 import { addToWaitlist, listWaitlist, removeFromWaitlist } from "../../lib/api/waitlist";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { Select } from "../../components/ui/field";
+import { Select, TextInput, Field } from "../../components/ui/field";
 import { Dialog } from "../../components/ui/dialog";
 import { StudentPicker } from "../../components/student-picker";
 import { EnrollmentForm } from "./enrollment-form";
@@ -29,6 +30,7 @@ export function EditionRoster({
   occupancy: EditionOccupancy | null | undefined;
 }) {
   const navigate = useNavigate();
+  const { courseTypeId } = useParams<{ courseTypeId: string }>();
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
 
@@ -36,8 +38,14 @@ export function EditionRoster({
   const [overriding, setOverriding] = useState(false);
   const [addingToWaitlist, setAddingToWaitlist] = useState(false);
   const [promoteStudent, setPromoteStudent] = useState<Student | null>(null);
+  const [confirming, setConfirming] = useState<{ enrollmentId: string; suggested: string } | null>(null);
+  const [senaAmount, setSenaAmount] = useState("");
 
   const full = Boolean(occupancy && occupancy.available <= 0);
+
+  function goToInscripcion(enrollmentId: string) {
+    navigate(`/cursos/${courseTypeId}/${editionId}/inscripciones/${enrollmentId}`);
+  }
 
   const { data: enrollments } = useQuery({
     queryKey: ["enrollments", editionId],
@@ -79,6 +87,28 @@ export function EditionRoster({
     mutationFn: ({ id, status }: { id: string; status: EnrollmentStatus }) =>
       updateEnrollment(id, { status }),
     onSuccess: invalidateAll,
+    onError: (err: Error) => window.alert(`No se pudo cambiar el estado: ${err.message}`),
+  });
+
+  const confirmWithSenaMutation = useMutation({
+    mutationFn: async ({ enrollmentId, amount }: { enrollmentId: string; amount: string }) => {
+      await createPayment({
+        enrollment_id: enrollmentId,
+        payment_date: new Date().toISOString().slice(0, 10),
+        amount,
+        payment_type: "sena",
+        payment_method: "efectivo",
+        reference: null,
+        notes: null,
+      });
+      await updateEnrollment(enrollmentId, { status: "confirmada" });
+    },
+    onSuccess: () => {
+      invalidateAll();
+      setConfirming(null);
+      setSenaAmount("");
+    },
+    onError: (err: Error) => window.alert(`No se pudo registrar la seña: ${err.message}`),
   });
 
   const waitlistMutation = useMutation({
@@ -100,6 +130,21 @@ export function EditionRoster({
     mutationFn: (id: string) => removeFromWaitlist(id),
     onSuccess: invalidateAll,
   });
+
+  function handleStatusChange(enrollmentId: string, currentStatus: EnrollmentStatus, newStatus: EnrollmentStatus, balance: string) {
+    if (newStatus === "confirmada" && currentStatus !== "confirmada") {
+      setSenaAmount(balance);
+      setConfirming({ enrollmentId, suggested: balance });
+      return;
+    }
+    statusMutation.mutate({ id: enrollmentId, status: newStatus });
+  }
+
+  function handleConfirmSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!confirming) return;
+    confirmWithSenaMutation.mutate({ enrollmentId: confirming.enrollmentId, amount: senaAmount });
+  }
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6">
@@ -145,11 +190,13 @@ export function EditionRoster({
             )}
             {enrollments?.map((e) => {
               const bal = balances?.[e.id];
+              const balanceAmount = bal?.balance ?? e.final_price;
               return (
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td
                     className="py-2 font-medium text-gray-900 cursor-pointer"
-                    onClick={() => navigate(`/alumnas/${e.student_id}`)}
+                    onClick={() => goToInscripcion(e.id)}
+                    title="Ver inscripción y pagos"
                   >
                     {e.students?.last_name}, {e.students?.first_name}
                   </td>
@@ -157,7 +204,7 @@ export function EditionRoster({
                     <Select
                       value={e.status}
                       onChange={(ev) =>
-                        statusMutation.mutate({ id: e.id, status: ev.target.value as EnrollmentStatus })
+                        handleStatusChange(e.id, e.status, ev.target.value as EnrollmentStatus, balanceAmount)
                       }
                       className="!py-1 text-xs"
                     >
@@ -171,13 +218,9 @@ export function EditionRoster({
                   <td className="py-2 text-right">{formatMoney(e.final_price)}</td>
                   <td className="py-2 text-right text-emerald-600">{formatMoney(bal?.paid_amount ?? 0)}</td>
                   <td className="py-2 text-right">
-                    <button
-                      onClick={() => navigate(`/inscripciones/${e.id}`)}
-                      className="inline-block"
-                      title="Ver pagos"
-                    >
-                      {parseFloat(bal?.balance ?? e.final_price) > 0 ? (
-                        <Badge color="amber">{formatMoney(bal?.balance ?? e.final_price)}</Badge>
+                    <button onClick={() => goToInscripcion(e.id)} className="inline-block" title="Ver pagos">
+                      {parseFloat(balanceAmount) > 0 ? (
+                        <Badge color="amber">{formatMoney(balanceAmount)}</Badge>
                       ) : (
                         <Badge color="green">Saldado</Badge>
                       )}
@@ -253,6 +296,31 @@ export function EditionRoster({
 
       <Dialog open={addingToWaitlist} onClose={() => setAddingToWaitlist(false)} title="Agregar a lista de espera">
         <StudentPicker onSelect={(s) => waitlistMutation.mutate(s)} />
+      </Dialog>
+
+      <Dialog open={Boolean(confirming)} onClose={() => setConfirming(null)} title="Confirmar inscripción">
+        <form onSubmit={handleConfirmSubmit} className="space-y-4">
+          <p className="text-sm text-gray-500">¿De cuánto fue la seña para confirmar esta inscripción?</p>
+          <Field label="Monto de la seña *">
+            <TextInput
+              type="number"
+              step="0.01"
+              min={0}
+              required
+              autoFocus
+              value={senaAmount}
+              onChange={(e) => setSenaAmount(e.target.value)}
+            />
+          </Field>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setConfirming(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={confirmWithSenaMutation.isPending}>
+              {confirmWithSenaMutation.isPending ? "Guardando..." : "Confirmar y registrar seña"}
+            </Button>
+          </div>
+        </form>
       </Dialog>
     </section>
   );
