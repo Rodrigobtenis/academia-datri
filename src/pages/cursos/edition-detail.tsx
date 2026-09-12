@@ -1,0 +1,187 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
+import { getEdition, getOccupancy, updateEdition } from "../../lib/api/courses";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { EditionForm } from "./edition-form";
+import { EditionRoster } from "../inscripciones/edition-roster";
+import { formatMoney } from "../../lib/money";
+import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
+import { useAuth } from "../../lib/auth-context";
+
+function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <div className="text-xs text-gray-400">{label}</div>
+      <div className="text-sm text-gray-800">{value || "—"}</div>
+    </div>
+  );
+}
+
+export default function EditionDetail() {
+  const { courseTypeId, editionId } = useParams<{ courseTypeId: string; editionId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { isAdmin } = useAuth();
+  const [editing, setEditing] = useState(false);
+
+  const { data: edition, isLoading } = useQuery({
+    queryKey: ["edition", editionId],
+    queryFn: () => getEdition(editionId!),
+    enabled: Boolean(editionId),
+  });
+
+  const { data: occupancy } = useQuery({
+    queryKey: ["occupancy-one", editionId],
+    queryFn: () => getOccupancy(editionId!),
+    enabled: Boolean(editionId),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (input: CourseEditionInput) => updateEdition(editionId!, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["edition", editionId] });
+      queryClient.invalidateQueries({ queryKey: ["editions", courseTypeId] });
+      queryClient.invalidateQueries({ queryKey: ["occupancy", courseTypeId] });
+      setEditing(false);
+    },
+  });
+
+  if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
+  if (!edition) return <div className="p-8 text-gray-400 text-sm">No se encontró la edición.</div>;
+
+  const full = Boolean(occupancy && occupancy.available <= 0);
+
+  return (
+    <div className="p-8 max-w-5xl">
+      <button
+        onClick={() => navigate(`/cursos/${courseTypeId}`)}
+        className="text-sm text-gray-400 hover:text-gray-600 mb-4"
+      >
+        ← Ediciones
+      </button>
+
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {edition.name || `Edición del ${new Date(edition.start_date).toLocaleDateString("es-AR")}`}
+            </h1>
+            <Badge color={EDITION_STATUS_COLORS[edition.status]}>
+              {EDITION_STATUS_LABELS[edition.status]}
+            </Badge>
+            {full && <Badge color="red">CURSO COMPLETO</Badge>}
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            {new Date(edition.start_date).toLocaleDateString("es-AR")}
+            {edition.end_date ? ` al ${new Date(edition.end_date).toLocaleDateString("es-AR")}` : ""}
+          </p>
+        </div>
+        {isAdmin && (
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            Editar
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos de la edición</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <InfoRow label="Horario" value={edition.start_time ? `${edition.start_time} - ${edition.end_time ?? ""}` : null} />
+              <InfoRow label="Sede" value={edition.location} />
+              <InfoRow label="Docente" value={edition.teacher} />
+              <InfoRow label="Precio" value={formatMoney(edition.list_price)} />
+              <InfoRow label="Precio promocional" value={edition.promo_price ? formatMoney(edition.promo_price) : null} />
+            </div>
+          </section>
+
+          {(edition.description || edition.includes || edition.materials || edition.requirements) && (
+            <section className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+              {edition.description && (
+                <div>
+                  <h3 className="text-xs text-gray-400 mb-1">Descripción</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.description}</p>
+                </div>
+              )}
+              {edition.includes && (
+                <div>
+                  <h3 className="text-xs text-gray-400 mb-1">Qué incluye</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.includes}</p>
+                </div>
+              )}
+              {edition.materials && (
+                <div>
+                  <h3 className="text-xs text-gray-400 mb-1">Materiales incluidos</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.materials}</p>
+                </div>
+              )}
+              {edition.requirements && (
+                <div>
+                  <h3 className="text-xs text-gray-400 mb-1">Requisitos</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{edition.requirements}</p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {isAdmin && edition.internal_notes && (
+            <section className="bg-amber-50 rounded-xl border border-amber-200 p-6">
+              <h3 className="text-xs text-amber-600 mb-1">Observaciones internas</h3>
+              <p className="text-sm text-amber-900 whitespace-pre-wrap">{edition.internal_notes}</p>
+            </section>
+          )}
+
+          <EditionRoster editionId={edition.id} listPrice={edition.promo_price ?? edition.list_price} occupancy={occupancy} />
+        </div>
+
+        <div className="space-y-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Cupos</h2>
+            {occupancy ? (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Cupos totales</span>
+                  <span className="font-medium text-gray-900">{occupancy.max_students}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Inscriptas</span>
+                  <span className="font-medium text-gray-900">{occupancy.enrolled_count}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Disponibles</span>
+                  <span className="font-medium text-gray-900">{occupancy.available}</span>
+                </div>
+                <div className="pt-2">
+                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className={`h-full ${full ? "bg-red-500" : "bg-brand-500"}`}
+                      style={{ width: `${Math.min(100, occupancy.occupancy_pct ?? 0)}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">{occupancy.occupancy_pct ?? 0}% ocupación</div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">—</p>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {courseTypeId && (
+        <EditionForm
+          open={editing}
+          onClose={() => setEditing(false)}
+          onSubmit={(values) => updateMutation.mutate(values)}
+          courseTypeId={courseTypeId}
+          initial={edition}
+          title="Editar edición"
+          saving={updateMutation.isPending}
+        />
+      )}
+    </div>
+  );
+}
