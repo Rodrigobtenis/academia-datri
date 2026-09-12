@@ -43,27 +43,34 @@ create table profiles (
 
 -- Crea el profile automáticamente al registrar un usuario (rol por defecto: empleada;
 -- el primer admin se promueve a mano con un UPDATE una vez creado el usuario en Supabase Auth).
-create function handle_new_user() returns trigger as $$
+-- search_path fijo en 'public': el rol interno supabase_auth_admin (quien dispara este
+-- trigger al crear un usuario) no tiene 'public' en su search_path por defecto, así que
+-- si no se califica el schema acá la creación de usuarios falla con
+-- "Database error creating new user".
+create function handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
 begin
-  insert into profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, role)
   values (new.id, new.raw_user_meta_data->>'full_name', 'empleada');
   return new;
 end;
-$$ language plpgsql security definer;
+$$;
 
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
 
-create function is_admin() returns boolean as $$
+create function is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
   select exists (
-    select 1 from profiles where id = auth.uid() and role = 'admin' and active
+    select 1 from public.profiles where id = auth.uid() and role = 'admin' and active
   );
-$$ language sql stable security definer;
+$$;
 
-create function is_active_profile() returns boolean as $$
-  select exists (select 1 from profiles where id = auth.uid() and active);
-$$ language sql stable security definer;
+create function is_active_profile() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and active);
+$$;
 
 -- =========================================================
 -- CURSOS: modalidades y ediciones
@@ -333,9 +340,10 @@ create table audit_logs (
 
 create index idx_audit_logs_entity on audit_logs(entity, entity_id);
 
-create function audit_trigger() returns trigger as $$
+create function audit_trigger() returns trigger
+language plpgsql security definer set search_path = public as $$
 begin
-  insert into audit_logs (user_id, entity, entity_id, action, old_data, new_data)
+  insert into public.audit_logs (user_id, entity, entity_id, action, old_data, new_data)
   values (
     auth.uid(),
     TG_TABLE_NAME,
@@ -346,7 +354,7 @@ begin
   );
   return coalesce(new, old);
 end;
-$$ language plpgsql security definer;
+$$;
 
 create trigger audit_enrollments after insert or update or delete on enrollments
   for each row execute function audit_trigger();

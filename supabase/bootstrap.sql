@@ -5,4 +5,5 @@
 
 update profiles
 set role = 'admin'
-where id = (select id from auth.users where email = 'TU_EMAIL_AQUI@ejemplo.com');
+where id = (select id from auth.users where email = 'estudiodatrioficial@gmail.com');
+-- Si vas a loguearte con otro email como Admin, cambialo acá antes de correr.
