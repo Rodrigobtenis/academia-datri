@@ -12,6 +12,9 @@ import CursosList from "./pages/cursos/cursos-list";
 import ModalidadDetail from "./pages/cursos/modalidad-detail";
 import EditionDetail from "./pages/cursos/edition-detail";
 import InscripcionDetail from "./pages/inscripciones/inscripcion-detail";
+import ComisionesPage from "./pages/comisiones/comisiones-page";
+import GestionPage from "./pages/gestion/gestion-page";
+import ConfiguracionPage from "./pages/configuracion/configuracion-page";
 
 const queryClient = new QueryClient();
 
@@ -57,14 +60,14 @@ export default function App() {
                 }
               />
               <Route path="/crm" element={<PagePlaceholder title="CRM" />} />
-              <Route path="/comisiones" element={<PagePlaceholder title="Comisiones" />} />
+              <Route path="/comisiones" element={<ComisionesPage />} />
               <Route path="/reportes" element={<PagePlaceholder title="Reportes" />} />
 
               <Route
                 path="/gestion"
                 element={
                   <RequireAdmin>
-                    <PagePlaceholder title="Gestión" note="Panel privado — solo Admin." />
+                    <GestionPage />
                   </RequireAdmin>
                 }
               />
@@ -72,7 +75,7 @@ export default function App() {
                 path="/configuracion"
                 element={
                   <RequireAdmin>
-                    <PagePlaceholder title="Configuración" note="Panel privado — solo Admin." />
+                    <ConfiguracionPage />
                   </RequireAdmin>
                 }
               />
