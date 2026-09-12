@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMonthlyCommissionDetail } from "../../lib/api/commissions";
 import { Select } from "../../components/ui/field";
+import { Button } from "../../components/ui/button";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
+import { exportToExcel } from "../../lib/excel-export";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS } from "../../types/payment";
 
 const MONTHS = [
@@ -29,6 +31,35 @@ export default function ComisionesPage() {
 
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
+  function handleExport() {
+    exportToExcel(
+      `Comisiones ${MONTHS[month - 1]} ${year}`,
+      "Comisiones",
+      [
+        { header: "Fecha", key: "fecha", width: 12 },
+        { header: "Alumna", key: "alumna", width: 25 },
+        { header: "Curso", key: "curso", width: 18 },
+        { header: "Edición", key: "edicion", width: 20 },
+        { header: "Tipo", key: "tipo", width: 14 },
+        { header: "Método", key: "metodo", width: 16 },
+        { header: "Monto", key: "monto", width: 14 },
+        { header: "%", key: "porcentaje", width: 8 },
+        { header: "Comisión", key: "comision", width: 14 },
+      ],
+      (rows ?? []).map((r) => ({
+        fecha: formatDateAR(r.payment_date),
+        alumna: r.student_name,
+        curso: r.course_name,
+        edicion: r.edition_label,
+        tipo: PAYMENT_TYPE_LABELS[r.payment_type],
+        metodo: PAYMENT_METHOD_LABELS[r.payment_method],
+        monto: parseFloat(r.amount),
+        porcentaje: parseFloat(r.rate_percent),
+        comision: parseFloat(r.commission_amount),
+      }))
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -53,6 +84,9 @@ export default function ComisionesPage() {
               </option>
             ))}
           </Select>
+          <Button variant="secondary" onClick={handleExport} disabled={!rows || rows.length === 0}>
+            Exportar Excel
+          </Button>
         </div>
       </div>
 

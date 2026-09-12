@@ -6,6 +6,7 @@ import { Select } from "../../components/ui/field";
 import { ExpenseForm } from "./expense-form";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
+import { exportToExcel } from "../../lib/excel-export";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
 
 const MONTHS = [
@@ -41,6 +42,27 @@ export default function GastosPage() {
   const total = sumMoney((expenses ?? []).map((e) => e.amount));
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
+  function handleExport() {
+    exportToExcel(
+      `Gastos ${MONTHS[month - 1]} ${year}`,
+      "Gastos",
+      [
+        { header: "Fecha", key: "fecha", width: 12 },
+        { header: "Categoría", key: "categoria", width: 16 },
+        { header: "Descripción", key: "descripcion", width: 30 },
+        { header: "Edición", key: "edicion", width: 20 },
+        { header: "Monto", key: "monto", width: 14 },
+      ],
+      (expenses ?? []).map((e) => ({
+        fecha: formatDateAR(e.expense_date),
+        categoria: EXPENSE_CATEGORY_LABELS[e.category],
+        descripcion: e.description ?? "",
+        edicion: e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General"),
+        monto: parseFloat(e.amount),
+      }))
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -48,7 +70,12 @@ export default function GastosPage() {
           <h1 className="text-lg font-semibold text-gray-900">Gastos</h1>
           <p className="text-sm text-gray-500">Privado — solo Admin.</p>
         </div>
-        <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={handleExport} disabled={!expenses || expenses.length === 0}>
+            Exportar Excel
+          </Button>
+          <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-6">

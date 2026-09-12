@@ -18,6 +18,7 @@ import ConfiguracionPage from "./pages/configuracion/configuracion-page";
 import CrmPage from "./pages/crm/crm-page";
 import GastosPage from "./pages/gastos/gastos-page";
 import AgendaPage from "./pages/agenda/agenda-page";
+import ReportesPage from "./pages/reportes/reportes-page";
 
 const queryClient = new QueryClient();
 
@@ -68,7 +69,7 @@ export default function App() {
               />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
-              <Route path="/reportes" element={<PagePlaceholder title="Reportes" />} />
+              <Route path="/reportes" element={<ReportesPage />} />
 
               <Route
                 path="/gestion"
