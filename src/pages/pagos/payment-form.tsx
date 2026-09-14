@@ -1,16 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
-import { formatMoney } from "../../lib/money";
-import { getOficialRate } from "../../lib/dolar";
-import {
-  PAYMENT_METHOD_LABELS,
-  PAYMENT_TYPE_LABELS,
-  type Currency,
-  type PaymentInput,
-  type PaymentType,
-} from "../../types/payment";
+import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentInput, type PaymentType } from "../../types/payment";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -20,7 +12,6 @@ export function PaymentForm({
   onSubmit,
   enrollmentId,
   suggestedAmount,
-  suggestedAmountUsd,
   saving,
 }: {
   open: boolean;
@@ -28,53 +19,27 @@ export function PaymentForm({
   onSubmit: (values: PaymentInput) => void;
   enrollmentId: string;
   suggestedAmount?: string;
-  suggestedAmountUsd?: string;
   saving?: boolean;
 }) {
   const [paymentDate, setPaymentDate] = useState(today());
-  const [currency, setCurrency] = useState<Currency>("ars");
-  const [amountArs, setAmountArs] = useState(suggestedAmount ?? "");
-  const [amountUsd, setAmountUsd] = useState(suggestedAmountUsd ?? "");
-  const [rate, setRate] = useState<number | null>(null);
-  const [rateError, setRateError] = useState<string | null>(null);
+  const [amount, setAmount] = useState(suggestedAmount ?? "");
   const [paymentType, setPaymentType] = useState<PaymentType>("parcial");
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
 
-  useEffect(() => {
-    if (currency !== "usd" || rate !== null) return;
-    getOficialRate()
-      .then((r) => setRate(r.venta))
-      .catch((err: Error) => setRateError(err.message));
-  }, [currency, rate]);
-
-  const amountArsComputed = useMemo(() => {
-    if (currency === "ars") return amountArs;
-    return String((parseFloat(amountUsd) || 0) * (rate ?? 0));
-  }, [currency, amountArs, amountUsd, rate]);
-
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const isUsd = currency === "usd" && rate;
-    const rawAmount = parseFloat(amountArsComputed) || 0;
-    const signedAmount = paymentType === "reintegro" ? -Math.abs(rawAmount) : rawAmount;
-    const usdRaw = parseFloat(amountUsd) || 0;
-
     onSubmit({
       enrollment_id: enrollmentId,
       payment_date: paymentDate,
-      amount: String(signedAmount),
+      amount: paymentType === "reintegro" ? String(-Math.abs(parseFloat(amount) || 0)) : amount,
       payment_type: paymentType,
       payment_method: paymentMethod as PaymentInput["payment_method"],
       reference: reference || null,
       notes: notes || null,
-      currency: isUsd ? "usd" : "ars",
-      original_amount_usd: isUsd ? String(paymentType === "reintegro" ? -Math.abs(usdRaw) : usdRaw) : null,
-      fx_rate: isUsd ? String(rate) : null,
     });
-    setAmountArs("");
-    setAmountUsd("");
+    setAmount("");
     setReference("");
     setNotes("");
   }
@@ -91,45 +56,17 @@ export function PaymentForm({
               onChange={(e) => setPaymentDate(e.target.value)}
             />
           </Field>
-          <Field label="Moneda">
-            <Select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
-              <option value="ars">Pesos (ARS)</option>
-              <option value="usd">Dólares (USD)</option>
-            </Select>
+          <Field label="Monto *">
+            <TextInput
+              type="number"
+              step="0.01"
+              min={0}
+              required
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </Field>
         </div>
-
-        <Field label={currency === "ars" ? "Monto *" : "Monto (USD) *"}>
-          {currency === "ars" ? (
-            <TextInput
-              type="number"
-              step="0.01"
-              min={0}
-              required
-              value={amountArs}
-              onChange={(e) => setAmountArs(e.target.value)}
-            />
-          ) : (
-            <TextInput
-              type="number"
-              step="0.01"
-              min={0}
-              required
-              value={amountUsd}
-              onChange={(e) => setAmountUsd(e.target.value)}
-            />
-          )}
-        </Field>
-
-        {currency === "usd" && (
-          <p className="text-xs text-gray-500 -mt-2">
-            {rate
-              ? `Dólar oficial (venta): $${rate} → equivale a ${formatMoney(amountArsComputed)}`
-              : rateError
-                ? `No se pudo obtener la cotización: ${rateError}`
-                : "Buscando cotización del dólar oficial..."}
-          </p>
-        )}
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Tipo de pago">

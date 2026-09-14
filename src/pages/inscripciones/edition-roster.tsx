@@ -17,20 +17,16 @@ import {
   type EnrollmentStatus,
 } from "../../types/enrollment";
 import type { Student } from "../../types/student";
-import type { Currency, EditionOccupancy } from "../../types/course";
+import type { EditionOccupancy } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
 
 export function EditionRoster({
   editionId,
   listPrice,
-  listPriceCurrency,
-  listPriceUsd,
   occupancy,
 }: {
   editionId: string;
   listPrice: string;
-  listPriceCurrency?: Currency;
-  listPriceUsd?: string | null;
   occupancy: EditionOccupancy | null | undefined;
 }) {
   const navigate = useNavigate();
@@ -104,9 +100,6 @@ export function EditionRoster({
         payment_method: "efectivo",
         reference: null,
         notes: null,
-        currency: "ars",
-        original_amount_usd: null,
-        fx_rate: null,
       });
       await updateEnrollment(enrollmentId, { status: "confirmada" });
     },
@@ -283,8 +276,6 @@ export function EditionRoster({
         onSubmit={(values) => createMutation.mutate(values)}
         courseEditionId={editionId}
         defaultPrice={listPrice}
-        defaultCurrency={listPriceCurrency}
-        defaultPriceUsd={listPriceUsd}
         saving={createMutation.isPending}
       />
 
@@ -295,8 +286,6 @@ export function EditionRoster({
         onSubmit={(values) => createMutation.mutate(values)}
         courseEditionId={editionId}
         defaultPrice={listPrice}
-        defaultCurrency={listPriceCurrency}
-        defaultPriceUsd={listPriceUsd}
         saving={createMutation.isPending}
         overrideCapacity
       />
@@ -309,8 +298,6 @@ export function EditionRoster({
           onSubmit={(values) => createMutation.mutate(values)}
           courseEditionId={editionId}
           defaultPrice={listPrice}
-        defaultCurrency={listPriceCurrency}
-        defaultPriceUsd={listPriceUsd}
           saving={createMutation.isPending}
           presetStudent={promoteStudent}
           overrideCapacity={full}
