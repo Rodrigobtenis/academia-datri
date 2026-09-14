@@ -18,6 +18,7 @@ import CrmPage from "./pages/crm/crm-page";
 import GastosPage from "./pages/gastos/gastos-page";
 import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
+import ModelosList from "./pages/modelos/modelos-list";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ export default function App() {
               />
               <Route path="/alumnas" element={<AlumnasList />} />
               <Route path="/alumnas/:id" element={<AlumnaDetail />} />
+              <Route path="/modelos" element={<ModelosList />} />
               <Route path="/inscripciones/:enrollmentId" element={<InscripcionDetail />} />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
