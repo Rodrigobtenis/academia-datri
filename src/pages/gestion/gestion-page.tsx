@@ -8,9 +8,12 @@ import {
   getYearCollections,
 } from "../../lib/api/management";
 import { listProfitability } from "../../lib/api/profitability";
+import { listGoalProgressHistory } from "../../lib/api/goals";
 import { GoalProgressCard } from "../../components/goal-progress-card";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
+import { MONTHS } from "../../lib/months";
+import { goalState, GOAL_STATE_COLORS, GOAL_STATE_LABELS } from "../../types/goal";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -61,6 +64,11 @@ export default function GestionPage() {
     queryFn: listProfitability,
   });
 
+  const { data: goalHistory } = useQuery({
+    queryKey: ["mgmt-goal-history"],
+    queryFn: listGoalProgressHistory,
+  });
+
   const currentAmount = parseFloat(current?.net_collected ?? "0");
   const previousAmount = parseFloat(previous?.net_collected ?? "0");
   const variation = previousAmount !== 0 ? ((currentAmount - previousAmount) / previousAmount) * 100 : null;
@@ -97,6 +105,61 @@ export default function GestionPage() {
       <section>
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Objetivo del mes</h2>
         <GoalProgressCard />
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold text-gray-900 mb-3">Historial de objetivos</h2>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium">Mes</th>
+                  <th className="text-right px-4 py-3 font-medium">Objetivo</th>
+                  <th className="text-right px-4 py-3 font-medium">Cobrado</th>
+                  <th className="text-left px-4 py-3 font-medium w-40">Progreso</th>
+                  <th className="text-right px-4 py-3 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {goalHistory?.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                      Todavía no hay objetivos cargados.
+                    </td>
+                  </tr>
+                )}
+                {goalHistory?.map((g) => {
+                  const percent = g.percent_complete ?? 0;
+                  const state = goalState(percent);
+                  const barPercent = Math.min(100, Math.max(0, percent));
+                  return (
+                    <tr key={g.goal_id}>
+                      <td className="px-4 py-2 font-medium text-gray-900">
+                        {MONTHS[g.month - 1]} {g.year}
+                      </td>
+                      <td className="px-4 py-2 text-right">{formatMoney(g.target_amount)}</td>
+                      <td className="px-4 py-2 text-right">{formatMoney(g.collected)}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 rounded-full bg-gray-100 overflow-hidden">
+                            <div className={`h-full ${GOAL_STATE_COLORS[state]}`} style={{ width: `${barPercent}%` }} />
+                          </div>
+                          <span className="text-xs text-gray-500 w-9 text-right shrink-0">{percent.toFixed(0)}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full text-white ${GOAL_STATE_COLORS[state]}`}>
+                          {GOAL_STATE_LABELS[state]}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section>
