@@ -1,3 +1,5 @@
+export type Currency = "ars" | "usd";
+
 export interface CourseType {
   id: string;
   name: string;
@@ -33,6 +35,9 @@ export interface CourseEdition {
   materials: string | null;
   requirements: string | null;
   internal_notes: string | null;
+  currency: Currency;
+  list_price_usd: string | null;
+  fx_rate: string | null;
   created_at: string;
   updated_at: string;
 }

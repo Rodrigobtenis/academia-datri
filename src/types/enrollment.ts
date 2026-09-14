@@ -1,4 +1,5 @@
 export type DiscountType = "monto" | "porcentaje";
+export type Currency = "ars" | "usd";
 
 export type EnrollmentStatus =
   | "consulta"
@@ -26,6 +27,10 @@ export interface Enrollment {
   override_capacity: boolean;
   override_authorized_by: string | null;
   notes: string | null;
+  currency: Currency;
+  original_price_usd: string | null;
+  final_price_usd: string | null;
+  fx_rate: string | null;
   created_at: string;
   updated_at: string;
 }

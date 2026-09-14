@@ -7,6 +7,7 @@ export type PaymentMethod =
   | "tarjeta_credito"
   | "otro";
 export type PaymentStatus = "valido" | "anulado";
+export type Currency = "ars" | "usd";
 
 export interface Payment {
   id: string;
@@ -22,13 +23,25 @@ export interface Payment {
   voided_at: string | null;
   voided_by: string | null;
   void_reason: string | null;
+  currency: Currency;
+  original_amount_usd: string | null;
+  fx_rate: string | null;
   created_by: string | null;
   created_at: string;
 }
 
 export type PaymentInput = Pick<
   Payment,
-  "enrollment_id" | "payment_date" | "amount" | "payment_type" | "payment_method" | "reference" | "notes"
+  | "enrollment_id"
+  | "payment_date"
+  | "amount"
+  | "payment_type"
+  | "payment_method"
+  | "reference"
+  | "notes"
+  | "currency"
+  | "original_amount_usd"
+  | "fx_rate"
 >;
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {

@@ -1,10 +1,16 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
 import { StudentPicker } from "../../components/student-picker";
 import { formatMoney } from "../../lib/money";
-import { ENROLLMENT_STATUS_LABELS, type DiscountType, type EnrollmentInput } from "../../types/enrollment";
+import { getOficialRate } from "../../lib/dolar";
+import {
+  ENROLLMENT_STATUS_LABELS,
+  type Currency,
+  type DiscountType,
+  type EnrollmentInput,
+} from "../../types/enrollment";
 import type { Student } from "../../types/student";
 import { useAuth } from "../../lib/auth-context";
 
@@ -14,6 +20,8 @@ export function EnrollmentForm({
   onSubmit,
   courseEditionId,
   defaultPrice,
+  defaultCurrency,
+  defaultPriceUsd,
   saving,
   overrideCapacity,
   presetStudent,
@@ -23,18 +31,36 @@ export function EnrollmentForm({
   onSubmit: (values: EnrollmentInput) => void;
   courseEditionId: string;
   defaultPrice: string;
+  defaultCurrency?: Currency;
+  defaultPriceUsd?: string | null;
   saving?: boolean;
   overrideCapacity?: boolean;
   presetStudent?: Student | null;
 }) {
   const { profile } = useAuth();
   const [student, setStudent] = useState<Student | null>(presetStudent ?? null);
-  const [originalPrice, setOriginalPrice] = useState(defaultPrice);
+  const [currency, setCurrency] = useState<Currency>(defaultCurrency ?? "ars");
+  const [priceArs, setPriceArs] = useState(defaultPrice);
+  const [priceUsd, setPriceUsd] = useState(defaultPriceUsd ?? "");
+  const [rate, setRate] = useState<number | null>(null);
+  const [rateError, setRateError] = useState<string | null>(null);
   const [discountType, setDiscountType] = useState<DiscountType | "">("");
   const [discountValue, setDiscountValue] = useState("");
   const [discountReason, setDiscountReason] = useState("");
   const [status, setStatus] = useState<EnrollmentInput["status"]>("reservada");
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (currency !== "usd" || rate !== null) return;
+    getOficialRate()
+      .then((r) => setRate(r.venta))
+      .catch((err: Error) => setRateError(err.message));
+  }, [currency, rate]);
+
+  const originalPrice = useMemo(() => {
+    if (currency === "ars") return priceArs;
+    return String((parseFloat(priceUsd) || 0) * (rate ?? 0));
+  }, [currency, priceArs, priceUsd, rate]);
 
   const finalPrice = useMemo(() => {
     const orig = parseFloat(originalPrice) || 0;
@@ -46,7 +72,9 @@ export function EnrollmentForm({
 
   function reset() {
     setStudent(presetStudent ?? null);
-    setOriginalPrice(defaultPrice);
+    setCurrency(defaultCurrency ?? "ars");
+    setPriceArs(defaultPrice);
+    setPriceUsd(defaultPriceUsd ?? "");
     setDiscountType("");
     setDiscountValue("");
     setDiscountReason("");
@@ -62,6 +90,10 @@ export function EnrollmentForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!student) return;
+    const isUsd = currency === "usd" && rate;
+    const origPriceUsd = parseFloat(priceUsd) || 0;
+    const finalPriceUsd = isUsd && origPriceUsd > 0 ? (finalPrice / (rate as number)).toFixed(2) : null;
+
     onSubmit({
       student_id: student.id,
       course_edition_id: courseEditionId,
@@ -76,6 +108,10 @@ export function EnrollmentForm({
       override_capacity: Boolean(overrideCapacity),
       override_authorized_by: overrideCapacity ? profile?.id ?? null : null,
       notes: notes || null,
+      currency: isUsd ? "usd" : "ars",
+      original_price_usd: isUsd ? String(origPriceUsd) : null,
+      final_price_usd: finalPriceUsd,
+      fx_rate: isUsd ? String(rate) : null,
     });
     reset();
   }
@@ -99,16 +135,45 @@ export function EnrollmentForm({
             </button>
           </div>
 
-          <Field label="Precio lista del curso *">
-            <TextInput
-              type="number"
-              step="0.01"
-              min={0}
-              required
-              value={originalPrice}
-              onChange={(e) => setOriginalPrice(e.target.value)}
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Moneda del precio">
+              <Select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
+                <option value="ars">Pesos (ARS)</option>
+                <option value="usd">Dólares (USD)</option>
+              </Select>
+            </Field>
+            <Field label={currency === "ars" ? "Precio lista del curso *" : "Precio lista del curso (USD) *"}>
+              {currency === "ars" ? (
+                <TextInput
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  required
+                  value={priceArs}
+                  onChange={(e) => setPriceArs(e.target.value)}
+                />
+              ) : (
+                <TextInput
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  required
+                  value={priceUsd}
+                  onChange={(e) => setPriceUsd(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+
+          {currency === "usd" && (
+            <p className="text-xs text-gray-500">
+              {rate
+                ? `Dólar oficial (venta): $${rate} → equivale a ${formatMoney(originalPrice)}`
+                : rateError
+                  ? `No se pudo obtener la cotización: ${rateError}`
+                  : "Buscando cotización del dólar oficial..."}
+            </p>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <Field label="Descuento">
@@ -118,7 +183,7 @@ export function EnrollmentForm({
                 <option value="porcentaje">Porcentaje</option>
               </Select>
             </Field>
-            <Field label={discountType === "porcentaje" ? "Porcentaje %" : "Monto"}>
+            <Field label={discountType === "porcentaje" ? "Porcentaje %" : "Monto (ARS)"}>
               <TextInput
                 type="number"
                 step="0.01"

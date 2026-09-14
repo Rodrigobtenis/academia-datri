@@ -67,6 +67,13 @@ export default function InscripcionDetail() {
   if (!enrollment) return <div className="p-8 text-gray-400 text-sm">No se encontró la inscripción.</div>;
 
   const balanceAmount = parseFloat(balance?.balance ?? enrollment.final_price);
+  const isUsdEnrollment = enrollment.currency === "usd";
+  const paidUsd = (payments ?? [])
+    .filter((p) => p.status === "valido" && p.currency === "usd")
+    .reduce((acc, p) => acc + parseFloat(p.original_amount_usd ?? "0"), 0);
+  const balanceUsd = isUsdEnrollment && enrollment.final_price_usd
+    ? Math.max(0, parseFloat(enrollment.final_price_usd) - paidUsd)
+    : null;
 
   return (
     <div className="p-8 max-w-3xl">
@@ -101,7 +108,11 @@ export default function InscripcionDetail() {
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">Precio lista</span>
-            <span>{formatMoney(enrollment.original_price)}</span>
+            <span>
+              {isUsdEnrollment && enrollment.original_price_usd
+                ? `USD ${enrollment.original_price_usd} (${formatMoney(enrollment.original_price)})`
+                : formatMoney(enrollment.original_price)}
+            </span>
           </div>
           {enrollment.discount_type && (
             <div className="flex justify-between text-gray-500">
@@ -122,7 +133,11 @@ export default function InscripcionDetail() {
           )}
           <div className="flex justify-between font-medium text-gray-900 pt-1 border-t border-gray-100">
             <span>Precio final</span>
-            <span>{formatMoney(enrollment.final_price)}</span>
+            <span>
+              {isUsdEnrollment && enrollment.final_price_usd
+                ? `USD ${enrollment.final_price_usd} (${formatMoney(enrollment.final_price)})`
+                : formatMoney(enrollment.final_price)}
+            </span>
           </div>
         </div>
       </section>
@@ -141,7 +156,7 @@ export default function InscripcionDetail() {
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-xs text-gray-400">Saldo</div>
             <div className={`font-semibold ${balanceAmount > 0 ? "text-amber-600" : "text-gray-900"}`}>
-              {formatMoney(balanceAmount)}
+              {balanceUsd !== null ? `USD ${balanceUsd.toFixed(2)} (${formatMoney(balanceAmount)})` : formatMoney(balanceAmount)}
             </div>
           </div>
           <div className="bg-gray-50 rounded-lg p-3">
@@ -157,8 +172,10 @@ export default function InscripcionDetail() {
               <div>
                 <div className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-900"}>
                   {formatDateAR(p.payment_date)} ·{" "}
-                  {formatMoney(p.amount)} · {PAYMENT_TYPE_LABELS[p.payment_type]} ·{" "}
-                  {PAYMENT_METHOD_LABELS[p.payment_method]}
+                  {p.currency === "usd" && p.original_amount_usd
+                    ? `USD ${p.original_amount_usd} (${formatMoney(p.amount)})`
+                    : formatMoney(p.amount)}{" "}
+                  · {PAYMENT_TYPE_LABELS[p.payment_type]} · {PAYMENT_METHOD_LABELS[p.payment_method]}
                 </div>
                 {p.status === "anulado" && (
                   <div className="text-xs text-red-500">Anulado: {p.void_reason}</div>
@@ -184,6 +201,7 @@ export default function InscripcionDetail() {
         onSubmit={(values) => createMutation.mutate(values)}
         enrollmentId={enrollmentId!}
         suggestedAmount={balanceAmount > 0 ? String(balanceAmount) : undefined}
+        suggestedAmountUsd={balanceUsd !== null && balanceUsd > 0 ? balanceUsd.toFixed(2) : undefined}
         saving={createMutation.isPending}
       />
 

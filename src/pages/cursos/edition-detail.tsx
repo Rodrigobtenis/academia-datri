@@ -123,7 +123,14 @@ export default function EditionDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <InfoRow label="Sede" value={edition.location} />
               <InfoRow label="Docente" value={edition.teacher} />
-              <InfoRow label="Precio" value={formatMoney(edition.list_price)} />
+              <InfoRow
+                label="Precio"
+                value={
+                  edition.currency === "usd" && edition.list_price_usd
+                    ? `USD ${edition.list_price_usd} (${formatMoney(edition.list_price)})`
+                    : formatMoney(edition.list_price)
+                }
+              />
             </div>
             {edition.materials && (
               <div className="mt-4 pt-4 border-t border-gray-100">
@@ -133,7 +140,13 @@ export default function EditionDetail() {
             )}
           </section>
 
-          <EditionRoster editionId={edition.id} listPrice={edition.list_price} occupancy={occupancy} />
+          <EditionRoster
+            editionId={edition.id}
+            listPrice={edition.list_price}
+            listPriceCurrency={edition.currency}
+            listPriceUsd={edition.list_price_usd}
+            occupancy={occupancy}
+          />
 
           <EditionAttendance editionId={edition.id} />
         </div>
