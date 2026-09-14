@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { deleteEdition, getEdition, getOccupancy, updateEdition } from "../../lib/api/courses";
+import {
+  forceDeleteEditionCascade,
+  getEditionDeletionSummary,
+  type EditionDeletionSummary,
+} from "../../lib/api/edition-purge";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
@@ -30,6 +35,9 @@ export default function EditionDetail() {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [forceStep, setForceStep] = useState<0 | 1 | 2>(0);
+  const [forceSummary, setForceSummary] = useState<EditionDeletionSummary | null>(null);
+  const [forceError, setForceError] = useState<string | null>(null);
 
   const { data: edition, isLoading } = useQuery({
     queryKey: ["edition", editionId],
@@ -71,6 +79,32 @@ export default function EditionDetail() {
     },
   });
 
+  const summaryMutation = useMutation({
+    mutationFn: () => getEditionDeletionSummary(editionId!),
+    onSuccess: (summary) => {
+      setForceSummary(summary);
+      setForceStep(1);
+    },
+    onError: (err: Error) => setForceError(err.message),
+  });
+
+  const forceDeleteMutation = useMutation({
+    mutationFn: () => forceDeleteEditionCascade(editionId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["editions", courseTypeId] });
+      queryClient.invalidateQueries({ queryKey: ["occupancy", courseTypeId] });
+      navigate(`/cursos/${courseTypeId}`);
+    },
+    onError: (err: Error) => setForceError(err.message),
+  });
+
+  function closeDeleteFlow() {
+    setDeleting(false);
+    setForceStep(0);
+    setForceSummary(null);
+    setForceError(null);
+  }
+
   if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
   if (!edition) return <div className="p-8 text-gray-400 text-sm">No se encontró la edición.</div>;
 
@@ -107,6 +141,9 @@ export default function EditionDetail() {
               variant="danger"
               onClick={() => {
                 setDeleteError(null);
+                setForceStep(0);
+                setForceSummary(null);
+                setForceError(null);
                 setDeleting(true);
               }}
             >
@@ -186,7 +223,7 @@ export default function EditionDetail() {
         />
       )}
 
-      {deleting && (
+      {deleting && forceStep === 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-2">Eliminar edición</h3>
@@ -197,13 +234,87 @@ export default function EditionDetail() {
               </span>
               ? Esta acción no se puede deshacer.
             </p>
-            {deleteError && <p className="text-sm text-red-600 mb-4">{deleteError}</p>}
+            {deleteError && (
+              <div className="mb-4">
+                <p className="text-sm text-red-600 mb-2">{deleteError}</p>
+                <button
+                  className="text-xs text-red-500 underline hover:text-red-700"
+                  disabled={summaryMutation.isPending}
+                  onClick={() => summaryMutation.mutate()}
+                >
+                  {summaryMutation.isPending ? "Revisando..." : "Eliminar todo de todos modos →"}
+                </button>
+              </div>
+            )}
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setDeleting(false)}>
+              <Button variant="secondary" onClick={closeDeleteFlow}>
                 Cancelar
               </Button>
               <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>
                 {deleteMutation.isPending ? "Eliminando..." : "Eliminar definitivamente"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && forceStep === 1 && forceSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl p-6">
+            <h3 className="text-base font-semibold text-red-700 mb-2">
+              Eliminar la edición y TODO su contenido
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Esta edición tiene datos reales cargados. Si continuás, se borran para siempre:
+            </p>
+            <ul className="text-sm text-gray-700 list-disc pl-5 mb-3 space-y-0.5">
+              <li>{forceSummary.enrollmentCount} inscripciones</li>
+              <li>
+                {forceSummary.paymentCount} pagos, por un total de{" "}
+                <span className="font-semibold">{formatMoney(forceSummary.totalCollected)}</span>
+              </li>
+              {forceSummary.attendanceCount > 0 && <li>{forceSummary.attendanceCount} registros de asistencia</li>}
+              {forceSummary.certificateCount > 0 && <li>{forceSummary.certificateCount} certificados</li>}
+              {forceSummary.waitlistCount > 0 && <li>{forceSummary.waitlistCount} en lista de espera</li>}
+              {forceSummary.expenseCount > 0 && <li>{forceSummary.expenseCount} gastos registrados</li>}
+              {forceSummary.documentCount > 0 && <li>{forceSummary.documentCount} documentos adjuntos</li>}
+            </ul>
+            <p className="text-sm text-red-600 font-medium mb-4">
+              Es irreversible. {formatMoney(forceSummary.totalCollected)} va a dejar de sumar para siempre en
+              Comisiones, Objetivos y Gestión de los meses en que se cobró.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeDeleteFlow}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={() => setForceStep(2)}>
+                Entiendo, continuar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && forceStep === 2 && forceSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl p-6">
+            <h3 className="text-base font-semibold text-red-700 mb-2">Última confirmación</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Vas a eliminar definitivamente esta edición y sus {forceSummary.paymentCount} pagos (
+              {formatMoney(forceSummary.totalCollected)}). No hay forma de deshacer esto ni de recuperar el
+              dinero borrado de los reportes.
+            </p>
+            {forceError && <p className="text-sm text-red-600 mb-4">{forceError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeDeleteFlow}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={forceDeleteMutation.isPending}
+                onClick={() => forceDeleteMutation.mutate()}
+              >
+                {forceDeleteMutation.isPending ? "Eliminando todo..." : "Sí, eliminar todo para siempre"}
               </Button>
             </div>
           </div>
