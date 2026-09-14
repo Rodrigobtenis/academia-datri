@@ -22,6 +22,7 @@ export function ModelForm({
   const [firstName, setFirstName] = useState(initial?.first_name ?? "");
   const [lastName, setLastName] = useState(initial?.last_name ?? "");
   const [age, setAge] = useState(initial?.age ? String(initial.age) : "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [selectedServices, setSelectedServices] = useState<string[]>(initial?.course_type_ids ?? []);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -39,6 +40,7 @@ export function ModelForm({
         first_name: firstName,
         last_name: lastName,
         age: age ? Number(age) : null,
+        phone: phone || null,
         notes: notes || null,
       },
       selectedServices,
@@ -49,15 +51,21 @@ export function ModelForm({
   return (
     <Dialog open={open} onClose={onClose} title={initial ? "Editar modelo" : "Nueva modelo"} wide>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Nombre *">
             <TextInput required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
           <Field label="Apellido *">
             <TextInput required value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <Field label="Edad">
             <TextInput type="number" min={0} max={119} value={age} onChange={(e) => setAge(e.target.value)} />
+          </Field>
+          <Field label="Teléfono">
+            <TextInput value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
         </div>
 

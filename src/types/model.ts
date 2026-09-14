@@ -3,6 +3,7 @@ export interface ModelPerson {
   first_name: string;
   last_name: string;
   age: number | null;
+  phone: string | null;
   photo_url: string | null;
   notes: string | null;
   created_at: string;
@@ -17,5 +18,6 @@ export type ModelInput = {
   first_name: string;
   last_name: string;
   age: number | null;
+  phone: string | null;
   notes: string | null;
 };

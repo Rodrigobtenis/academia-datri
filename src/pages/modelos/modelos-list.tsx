@@ -20,7 +20,10 @@ export default function ModelosList() {
   const filtered = (models ?? []).filter((m) => {
     if (!search.trim()) return true;
     const term = search.trim().toLowerCase();
-    return `${m.first_name} ${m.last_name}`.toLowerCase().includes(term);
+    return (
+      `${m.first_name} ${m.last_name}`.toLowerCase().includes(term) ||
+      (m.phone ?? "").toLowerCase().includes(term)
+    );
   });
 
   function invalidate() {
@@ -76,7 +79,7 @@ export default function ModelosList() {
 
       <div className="mb-4 max-w-sm">
         <TextInput
-          placeholder="Buscar por nombre..."
+          placeholder="Buscar por nombre o teléfono..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -88,6 +91,7 @@ export default function ModelosList() {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Nombre</th>
+                <th className="text-left px-4 py-3 font-medium">Teléfono</th>
                 <th className="text-left px-4 py-3 font-medium">Edad</th>
                 <th className="text-left px-4 py-3 font-medium">Servicios</th>
                 <th className="text-left px-4 py-3 font-medium">Foto</th>
@@ -97,14 +101,14 @@ export default function ModelosList() {
             <tbody className="divide-y divide-gray-100">
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                     Cargando...
                   </td>
                 </tr>
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                     No hay modelos cargadas todavía.
                   </td>
                 </tr>
@@ -117,6 +121,7 @@ export default function ModelosList() {
                   >
                     {m.last_name}, {m.first_name}
                   </td>
+                  <td className="px-4 py-2 text-gray-600">{m.phone ?? "—"}</td>
                   <td className="px-4 py-2 text-gray-600">{m.age ?? "—"}</td>
                   <td className="px-4 py-2">
                     <div className="flex flex-wrap gap-1">
