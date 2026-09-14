@@ -6,6 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea } from "../../components/ui/field";
 import { useAuth } from "../../lib/auth-context";
+import { AlertsPanel } from "../../components/alerts-panel";
 
 export default function CursosList() {
   const [creating, setCreating] = useState(false);
@@ -61,6 +62,10 @@ export default function CursosList() {
             {t.description && <div className="text-sm text-gray-500 mt-1">{t.description}</div>}
           </button>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <AlertsPanel />
       </div>
 
       <Dialog open={creating} onClose={() => setCreating(false)} title="Nueva modalidad">
