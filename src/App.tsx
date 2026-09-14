@@ -1,8 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./lib/auth-context";
 import { RequireAuth, RequireAdmin } from "./components/require-auth";
 import AppLayout from "./components/app-layout";
+import { Toaster } from "./components/toaster";
+import { emitError } from "./lib/toast-bus";
 import LoginPage from "./pages/auth/login";
 import DashboardPage from "./pages/dashboard/dashboard-page";
 import AlumnasList from "./pages/alumnas/alumnas-list";
@@ -20,7 +22,22 @@ import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
 import ModelosList from "./pages/modelos/modelos-list";
 
-const queryClient = new QueryClient();
+// Red de contención global: si CUALQUIER mutación de la app falla y esa pantalla no
+// maneja el error puntualmente, esto igual muestra un toast — así ninguna acción falla
+// en silencio. Las pantallas que ya validan/muestran su propio error (ej. edition-detail)
+// simplemente suman un toast además, no está de más.
+function readableError(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return "Ocurrió un error inesperado.";
+}
+
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error) => emitError(readableError(error)),
+  }),
+});
 
 export default function App() {
   return (
@@ -82,6 +99,7 @@ export default function App() {
           </Routes>
         </AuthProvider>
       </BrowserRouter>
+      <Toaster />
     </QueryClientProvider>
   );
 }

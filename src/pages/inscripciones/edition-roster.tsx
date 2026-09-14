@@ -87,7 +87,6 @@ export function EditionRoster({
     mutationFn: ({ id, status }: { id: string; status: EnrollmentStatus }) =>
       updateEnrollment(id, { status }),
     onSuccess: invalidateAll,
-    onError: (err: Error) => window.alert(`No se pudo cambiar el estado: ${err.message}`),
   });
 
   const confirmWithSenaMutation = useMutation({
@@ -108,7 +107,6 @@ export function EditionRoster({
       setConfirming(null);
       setSenaAmount("");
     },
-    onError: (err: Error) => window.alert(`No se pudo registrar la seña: ${err.message}`),
   });
 
   const waitlistMutation = useMutation({
