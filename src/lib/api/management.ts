@@ -40,7 +40,14 @@ export async function getCourseTypeSummary() {
 }
 
 export async function getPendingTotal() {
-  const { data, error } = await supabase.from("v_enrollment_balance").select("balance");
+  // Igual criterio que Reportes > Deudas y la ficha de alumna: una inscripción cancelada
+  // nunca se va a cobrar, así que no debe sumar al "pendiente de cobro" del negocio.
+  const { data: active, error: e1 } = await supabase.from("enrollments").select("id").neq("status", "cancelada");
+  if (e1) throw e1;
+  const ids = (active as { id: string }[]).map((r) => r.id);
+  if (ids.length === 0) return 0;
+
+  const { data, error } = await supabase.from("v_enrollment_balance").select("balance").in("enrollment_id", ids);
   if (error) throw error;
   return (data as { balance: string }[]).reduce((acc, r) => acc + Math.max(0, parseFloat(r.balance)), 0);
 }

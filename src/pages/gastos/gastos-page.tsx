@@ -8,11 +8,7 @@ import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { exportToExcel } from "../../lib/excel-export";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
-
-const MONTHS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
+import { MONTHS } from "../../lib/months";
 
 export default function GastosPage() {
   const now = new Date();

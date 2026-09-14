@@ -10,11 +10,7 @@ import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { useAuth } from "../../lib/auth-context";
 import type { Role } from "../../types/profile";
-
-const MONTHS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
+import { MONTHS } from "../../lib/months";
 
 export default function ConfiguracionPage() {
   const now = new Date();

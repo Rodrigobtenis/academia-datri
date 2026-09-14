@@ -7,11 +7,7 @@ import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { exportToExcel } from "../../lib/excel-export";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS } from "../../types/payment";
-
-const MONTHS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
+import { MONTHS } from "../../lib/months";
 
 export default function ComisionesPage() {
   const now = new Date();

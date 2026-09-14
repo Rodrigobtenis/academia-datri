@@ -6,11 +6,8 @@ import { formatDateAR } from "../../lib/date-ar";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS } from "../../types/course";
+import { MONTHS } from "../../lib/months";
 
-const MONTHS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 function buildMonthGrid(year: number, month: number) {
