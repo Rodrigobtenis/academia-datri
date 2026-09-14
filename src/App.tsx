@@ -69,7 +69,7 @@ export default function App() {
               <Route path="/inscripciones/:enrollmentId" element={<InscripcionDetail />} />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
-              <Route path="/reportes" element={<ReportesPage />} />
+              <Route path="/gastos" element={<GastosPage />} />
 
               <Route
                 path="/gestion"
@@ -80,10 +80,10 @@ export default function App() {
                 }
               />
               <Route
-                path="/gastos"
+                path="/reportes"
                 element={
                   <RequireAdmin>
-                    <GastosPage />
+                    <ReportesPage />
                   </RequireAdmin>
                 }
               />

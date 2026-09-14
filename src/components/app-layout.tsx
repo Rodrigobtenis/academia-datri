@@ -25,12 +25,12 @@ const mainNav = [
   { to: "/modelos", label: "Modelos", icon: IconCamera },
   { to: "/crm", label: "CRM", icon: IconChat },
   { to: "/comisiones", label: "Comisiones", icon: IconPercent },
-  { to: "/reportes", label: "Reportes", icon: IconChart },
+  { to: "/gastos", label: "Gastos", icon: IconWallet },
 ];
 
 const adminNav = [
   { to: "/gestion", label: "Gestión", icon: IconBriefcase },
-  { to: "/gastos", label: "Gastos", icon: IconWallet },
+  { to: "/reportes", label: "Reportes", icon: IconChart },
   { to: "/configuracion", label: "Configuración", icon: IconGear },
 ];
 
@@ -67,7 +67,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {isAdmin && (
           <>
             <div className="pt-4 pb-1.5 px-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-100/50">Gestión</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-100/50">Administración</p>
             </div>
             {adminNav.map(({ to, label, icon: Icon }) => (
               <NavLink key={to} to={to} onClick={onNavigate} className={({ isActive }) => linkClass(isActive)}>

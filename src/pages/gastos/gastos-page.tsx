@@ -9,9 +9,11 @@ import { formatDateAR } from "../../lib/date-ar";
 import { exportToExcel } from "../../lib/excel-export";
 import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
 import { MONTHS } from "../../lib/months";
+import { useAuth } from "../../lib/auth-context";
 
 export default function GastosPage() {
   const now = new Date();
+  const { isAdmin } = useAuth();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [creating, setCreating] = useState(false);
@@ -64,13 +66,15 @@ export default function GastosPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">Gastos</h1>
-          <p className="text-sm text-gray-500">Privado — solo Admin.</p>
+          <p className="text-sm text-gray-500">
+            {isAdmin ? "Registrá y consultá los gastos del negocio." : "Consulta de gastos del negocio."}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleExport} disabled={!expenses || expenses.length === 0}>
             Exportar Excel
           </Button>
-          <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>
+          {isAdmin && <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>}
         </div>
       </div>
 
@@ -106,20 +110,20 @@ export default function GastosPage() {
               <th className="text-left px-4 py-3 font-medium">Descripción</th>
               <th className="text-left px-4 py-3 font-medium">Edición</th>
               <th className="text-right px-4 py-3 font-medium">Monto</th>
-              <th />
+              {isAdmin && <th />}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={isAdmin ? 6 : 5} className="px-4 py-8 text-center text-gray-400">
                   Cargando...
                 </td>
               </tr>
             )}
             {!isLoading && expenses?.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={isAdmin ? 6 : 5} className="px-4 py-8 text-center text-gray-400">
                   Sin gastos este mes.
                 </td>
               </tr>
@@ -133,14 +137,16 @@ export default function GastosPage() {
                   {e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General")}
                 </td>
                 <td className="px-4 py-2 text-right font-medium">{formatMoney(e.amount)}</td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    className="text-xs text-red-500 hover:text-red-700"
-                    onClick={() => deleteMutation.mutate(e.id)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
+                {isAdmin && (
+                  <td className="px-4 py-2 text-right">
+                    <button
+                      className="text-xs text-red-500 hover:text-red-700"
+                      onClick={() => deleteMutation.mutate(e.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
