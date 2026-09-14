@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./lib/auth-context";
 import { RequireAuth, RequireAdmin } from "./components/require-auth";
 import AppLayout from "./components/app-layout";
-import PagePlaceholder from "./components/page-placeholder";
 import LoginPage from "./pages/auth/login";
 import DashboardPage from "./pages/dashboard/dashboard-page";
 import AlumnasList from "./pages/alumnas/alumnas-list";
@@ -48,25 +47,7 @@ export default function App() {
               />
               <Route path="/alumnas" element={<AlumnasList />} />
               <Route path="/alumnas/:id" element={<AlumnaDetail />} />
-              <Route
-                path="/inscripciones"
-                element={
-                  <PagePlaceholder
-                    title="Inscripciones"
-                    note="Las inscripciones se gestionan desde cada edición (Cursos → modalidad → edición)."
-                  />
-                }
-              />
               <Route path="/inscripciones/:enrollmentId" element={<InscripcionDetail />} />
-              <Route
-                path="/pagos"
-                element={
-                  <PagePlaceholder
-                    title="Pagos"
-                    note="Los pagos se registran desde cada inscripción (Alumna → curso, o Curso → edición → alumna)."
-                  />
-                }
-              />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
               <Route path="/reportes" element={<ReportesPage />} />

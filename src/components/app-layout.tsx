@@ -6,8 +6,6 @@ const mainNav = [
   { to: "/agenda", label: "Agenda" },
   { to: "/cursos", label: "Cursos" },
   { to: "/alumnas", label: "Alumnas" },
-  { to: "/inscripciones", label: "Inscripciones" },
-  { to: "/pagos", label: "Pagos" },
   { to: "/crm", label: "CRM" },
   { to: "/comisiones", label: "Comisiones" },
   { to: "/reportes", label: "Reportes" },
