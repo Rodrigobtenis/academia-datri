@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   getCourseTypeSummary,
+  getCourseTypeSummaryRange,
   getMonthPaymentBreakdown,
   getMonthSoldTotal,
   getMonthlyCollection,
@@ -10,6 +12,7 @@ import {
 import { listProfitability } from "../../lib/api/profitability";
 import { listGoalProgressHistory } from "../../lib/api/goals";
 import { GoalProgressCard } from "../../components/goal-progress-card";
+import { TextInput } from "../../components/ui/field";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { MONTHS } from "../../lib/months";
@@ -54,9 +57,16 @@ export default function GestionPage() {
     queryKey: ["mgmt-sold", month, year],
     queryFn: () => getMonthSoldTotal(month, year),
   });
-  const { data: courseSummary } = useQuery({
-    queryKey: ["mgmt-course-summary"],
-    queryFn: getCourseTypeSummary,
+  const [facturacionFrom, setFacturacionFrom] = useState("");
+  const [facturacionTo, setFacturacionTo] = useState("");
+  const hasFacturacionRange = Boolean(facturacionFrom && facturacionTo);
+
+  const { data: courseSummary, isFetching: loadingCourseSummary } = useQuery({
+    queryKey: hasFacturacionRange
+      ? ["mgmt-course-summary-range", facturacionFrom, facturacionTo]
+      : ["mgmt-course-summary"],
+    queryFn: () =>
+      hasFacturacionRange ? getCourseTypeSummaryRange(facturacionFrom, facturacionTo) : getCourseTypeSummary(),
   });
 
   const { data: profitability } = useQuery({
@@ -163,7 +173,40 @@ export default function GestionPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Facturación por modalidad</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 className="text-sm font-semibold text-gray-900">Facturación por modalidad</h2>
+          <div className="flex items-center gap-2">
+            <TextInput
+              type="date"
+              value={facturacionFrom}
+              onChange={(e) => setFacturacionFrom(e.target.value)}
+              className="!w-auto !py-1.5 text-xs"
+            />
+            <span className="text-xs text-gray-400">a</span>
+            <TextInput
+              type="date"
+              value={facturacionTo}
+              onChange={(e) => setFacturacionTo(e.target.value)}
+              className="!w-auto !py-1.5 text-xs"
+            />
+            {hasFacturacionRange && (
+              <button
+                onClick={() => {
+                  setFacturacionFrom("");
+                  setFacturacionTo("");
+                }}
+                className="text-xs text-gray-400 hover:text-gray-600 underline shrink-0"
+              >
+                Ver todo
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mb-3">
+          {hasFacturacionRange
+            ? `Vendido y cobrado entre el ${formatDateAR(facturacionFrom)} y el ${formatDateAR(facturacionTo)}.`
+            : "Mostrando el histórico completo — elegí un rango de fechas para filtrar."}
+        </p>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -177,6 +220,13 @@ export default function GestionPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              {!loadingCourseSummary && courseSummary?.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    Sin actividad en el rango elegido.
+                  </td>
+                </tr>
+              )}
               {courseSummary?.map((c) => (
                 <tr key={c.course_type_id}>
                   <td className="px-4 py-2 font-medium text-gray-900">{c.name}</td>
