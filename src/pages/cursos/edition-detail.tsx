@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEdition, getOccupancy, updateEdition } from "../../lib/api/courses";
+import { deleteEdition, getEdition, getOccupancy, updateEdition } from "../../lib/api/courses";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
@@ -28,6 +28,8 @@ export default function EditionDetail() {
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: edition, isLoading } = useQuery({
     queryKey: ["edition", editionId],
@@ -48,6 +50,24 @@ export default function EditionDetail() {
       queryClient.invalidateQueries({ queryKey: ["editions", courseTypeId] });
       queryClient.invalidateQueries({ queryKey: ["occupancy", courseTypeId] });
       setEditing(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteEdition(editionId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["editions", courseTypeId] });
+      queryClient.invalidateQueries({ queryKey: ["occupancy", courseTypeId] });
+      navigate(`/cursos/${courseTypeId}`);
+    },
+    onError: (err: { code?: string; message: string }) => {
+      if (err.code === "23503") {
+        setDeleteError(
+          "No se puede eliminar: esta edición ya tiene alumnas inscriptas, gastos u otros datos cargados. Cancelala en cambio (estado \"Cancelado\") si no va a dictarse."
+        );
+      } else {
+        setDeleteError(err.message);
+      }
     },
   });
 
@@ -79,9 +99,20 @@ export default function EditionDetail() {
           <p className="text-sm text-gray-500 mt-1">{formatDateAR(edition.start_date)}</p>
         </div>
         {isAdmin && (
-          <Button variant="secondary" onClick={() => setEditing(true)}>
-            Editar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              Editar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setDeleteError(null);
+                setDeleting(true);
+              }}
+            >
+              Eliminar
+            </Button>
+          </div>
         )}
       </div>
 
@@ -153,6 +184,30 @@ export default function EditionDetail() {
           title="Editar edición"
           saving={updateMutation.isPending}
         />
+      )}
+
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Eliminar edición</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              ¿Seguro que querés eliminar{" "}
+              <span className="font-medium text-gray-800">
+                {edition.name || `la edición del ${formatDateAR(edition.start_date)}`}
+              </span>
+              ? Esta acción no se puede deshacer.
+            </p>
+            {deleteError && <p className="text-sm text-red-600 mb-4">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setDeleting(false)}>
+                Cancelar
+              </Button>
+              <Button variant="danger" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>
+                {deleteMutation.isPending ? "Eliminando..." : "Eliminar definitivamente"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

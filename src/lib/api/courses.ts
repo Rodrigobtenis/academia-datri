@@ -67,6 +67,11 @@ export async function updateEdition(id: string, input: Partial<CourseEditionInpu
   return data as CourseEdition;
 }
 
+export async function deleteEdition(id: string) {
+  const { error } = await supabase.from("course_editions").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function getOccupancy(editionId: string) {
   const { data, error } = await supabase
     .from("v_edition_occupancy")
