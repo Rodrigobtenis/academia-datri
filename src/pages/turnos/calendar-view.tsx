@@ -28,12 +28,14 @@ const ROW_HEIGHT = 28; // px por bloque de 30 min
 const TOTAL_SLOTS = (DAY_END_HOUR - DAY_START_HOUR) * 2;
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-const STATUS_BG: Record<string, string> = {
-  gray: "bg-gray-400",
-  blue: "bg-blue-500",
-  green: "bg-emerald-500",
-  red: "bg-red-400",
-  amber: "bg-amber-500",
+// Franja de color a la izquierda del bloque según el estado del turno — el bloque en sí
+// queda celeste claro para todos, como en la referencia (AgendaPro).
+const STATUS_BORDER: Record<string, string> = {
+  gray: "border-l-gray-400",
+  blue: "border-l-blue-500",
+  green: "border-l-emerald-500",
+  red: "border-l-red-400",
+  amber: "border-l-amber-500",
 };
 
 function timeToOffset(time: string) {
@@ -328,8 +330,13 @@ export function CalendarView() {
             <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${activeProfessionals.length}, 1fr)` }}>
               {activeProfessionals.map((p) => (
                 <div key={p.id} className="border-l border-gray-100">
-                  <div className="h-9 border-b border-gray-100 flex items-center justify-center text-xs font-medium text-gray-700 px-1 text-center">
-                    {p.first_name} {p.last_name}
+                  <div className="border-b border-gray-100 flex flex-col items-center justify-center gap-1 py-2 px-1 text-center">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
+                      {p.first_name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 truncate max-w-full">
+                      {p.first_name} {p.last_name}
+                    </span>
                   </div>
                   <div className="relative" style={{ height: TOTAL_SLOTS * ROW_HEIGHT }}>
                     {Array.from({ length: TOTAL_SLOTS }, (_, slot) => {
@@ -351,11 +358,14 @@ export function CalendarView() {
                         <button
                           key={b.id}
                           onClick={() => setDeletingBlock(b)}
-                          className="absolute inset-x-0.5 rounded-md px-1.5 py-0.5 text-left text-[11px] text-gray-500 bg-[repeating-linear-gradient(45deg,theme(colors.gray.200),theme(colors.gray.200)_4px,theme(colors.gray.100)_4px,theme(colors.gray.100)_8px)] border border-gray-300 overflow-hidden"
+                          className="absolute inset-x-0.5 rounded-md px-2 py-1 text-left text-[11px] text-gray-500 bg-gray-200 overflow-hidden"
                           style={{ top, height }}
                           title="Click para eliminar el bloqueo"
                         >
-                          <div className="font-medium truncate">{b.reason || "No disponible"}</div>
+                          <div className="font-medium truncate">{b.reason || "Profesional no disponible"}</div>
+                          <div className="truncate opacity-80">
+                            {b.start_time.slice(0, 5)} - {b.end_time.slice(0, 5)}
+                          </div>
                         </button>
                       );
                     })}
@@ -366,15 +376,18 @@ export function CalendarView() {
                         <button
                           key={a.id}
                           onClick={() => setSelectedAppointmentId(a.id)}
-                          className={`absolute inset-x-0.5 rounded-md px-1.5 py-0.5 text-left text-[11px] text-white overflow-hidden ${
-                            STATUS_BG[APPOINTMENT_STATUS_COLORS[a.status]]
+                          className={`absolute inset-x-0.5 rounded-md pl-2 pr-1.5 py-1 text-left text-[11px] text-gray-800 bg-sky-100 border-l-4 overflow-hidden ${
+                            STATUS_BORDER[APPOINTMENT_STATUS_COLORS[a.status]]
                           }`}
                           style={{ top, height }}
                         >
-                          <div className="font-medium truncate">
+                          <div className="font-semibold truncate">
                             {a.students?.last_name}, {a.students?.first_name}
                           </div>
-                          <div className="truncate opacity-90">{a.services?.name}</div>
+                          <div className="truncate text-gray-600">{a.services?.name}</div>
+                          <div className="truncate text-gray-500">
+                            {a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}
+                          </div>
                         </button>
                       );
                     })}
