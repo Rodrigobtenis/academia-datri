@@ -149,6 +149,18 @@ export function CalendarView() {
     enabled: view === "mes",
   });
 
+  // Mismo barrido que arriba pero para todo el mes que se está viendo — así un día pasado
+  // que no se vuelve a abrir en Grilla/Lista igual se pone al día apenas se lo ve en el mes.
+  useEffect(() => {
+    const elapsed = (monthAppointments ?? []).filter(hasElapsed);
+    if (elapsed.length === 0) return;
+    Promise.all(elapsed.map((a) => updateAppointment(a.id, { status: "atendido" }))).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthAppointments]);
+
   const activeProfessionals = (professionals ?? []).filter((p) => p.active);
   const activeServices = (services ?? []).filter((s) => s.active);
 
@@ -328,10 +340,27 @@ export function CalendarView() {
         </div>
 
         <div className="ml-auto flex gap-2">
-          <Button variant="secondary" onClick={() => setBlocking({})}>
+          <Button
+            variant="secondary"
+            onClick={() => setBlocking({})}
+            disabled={activeProfessionals.length === 0}
+            title={activeProfessionals.length === 0 ? "Primero agregá un profesional activo" : undefined}
+          >
             Bloquear horario
           </Button>
-          <Button onClick={() => setBooking({})}>+ Nuevo turno</Button>
+          <Button
+            onClick={() => setBooking({})}
+            disabled={activeProfessionals.length === 0 || activeServices.length === 0}
+            title={
+              activeProfessionals.length === 0
+                ? "Primero agregá un profesional activo"
+                : activeServices.length === 0
+                  ? "Primero agregá un servicio"
+                  : undefined
+            }
+          >
+            + Nuevo turno
+          </Button>
         </div>
       </div>
 

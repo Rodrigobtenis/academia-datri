@@ -46,10 +46,13 @@ export function AppointmentForm({
   defaultStartTime?: string;
 }) {
   const [student, setStudent] = useState<Student | null>(null);
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
-  const [professionalId, setProfessionalId] = useState(defaultProfessionalId ?? professionals[0]?.id ?? "");
+  // Sin service/profesional preseleccionados a propósito: con 190 servicios cargados,
+  // arrancar en "el primero alfabético" invita a agendar el servicio equivocado por
+  // descuido — se obliga a elegir uno de forma activa.
+  const [serviceId, setServiceId] = useState("");
+  const [professionalId, setProfessionalId] = useState(defaultProfessionalId ?? "");
   const [startTime, setStartTime] = useState(defaultStartTime ?? "09:00");
-  const [price, setPrice] = useState(services[0]?.price ?? "0");
+  const [price, setPrice] = useState("0");
   const [notes, setNotes] = useState("");
   const [addSena, setAddSena] = useState(false);
   const [senaAmount, setSenaAmount] = useState("");
@@ -57,6 +60,7 @@ export function AppointmentForm({
 
   const [conflicts, setConflicts] = useState<{ label: string } [] | null>(null);
   const [checking, setChecking] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [serviceQuery, setServiceQuery] = useState("");
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
@@ -97,17 +101,18 @@ export function AppointmentForm({
 
   function reset() {
     setStudent(null);
-    setServiceId(services[0]?.id ?? "");
-    setServiceQuery(services[0]?.name ?? "");
+    setServiceId("");
+    setServiceQuery("");
     setServiceDropdownOpen(false);
-    setProfessionalId(defaultProfessionalId ?? professionals[0]?.id ?? "");
+    setProfessionalId(defaultProfessionalId ?? "");
     setStartTime(defaultStartTime ?? "09:00");
-    setPrice(services[0]?.price ?? "0");
+    setPrice("0");
     setNotes("");
     setAddSena(false);
     setSenaAmount("");
     setSenaMethod("efectivo");
     setConflicts(null);
+    setFormError(null);
   }
 
   function handleClose() {
@@ -159,7 +164,19 @@ export function AppointmentForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!student || !professionalId || !serviceId) return;
+    setFormError(null);
+    if (!student) {
+      setFormError("Falta elegir la clienta.");
+      return;
+    }
+    if (!serviceId) {
+      setFormError("Falta elegir un servicio de la lista (no alcanza con escribir el nombre).");
+      return;
+    }
+    if (!professionalId) {
+      setFormError("Falta elegir un profesional.");
+      return;
+    }
 
     if (!conflicts) {
       const ok = await checkConflicts();
@@ -184,7 +201,9 @@ export function AppointmentForm({
       },
       sena
     );
-    reset();
+    // No se resetea acá: si la mutación en el padre falla, el diálogo sigue abierto y el
+    // formulario se vaciaría de golpe sin que se haya guardado nada. El padre se encarga de
+    // cerrar (y por lo tanto desmontar/limpiar este formulario) solo cuando sale bien.
   }
 
   return (
@@ -258,6 +277,9 @@ export function AppointmentForm({
                 }}
                 required
               >
+                <option value="" disabled>
+                  Elegí un profesional
+                </option>
                 {professionals.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.first_name} {p.last_name}
@@ -328,6 +350,8 @@ export function AppointmentForm({
               </div>
             )}
           </div>
+
+          {formError && <p className="text-sm text-red-600">{formError}</p>}
 
           {conflicts && conflicts.length > 0 && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">

@@ -23,6 +23,14 @@ import { useAuth } from "../../lib/auth-context";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+// Los editores inline de precio/monto no están dentro de un <form>, así que "min" y
+// "required" del input no bloquean nada por sí solos — hay que validar antes de habilitar
+// el botón de confirmar.
+function isValidMoneyInput(value: string): boolean {
+  const n = parseFloat(value);
+  return value.trim() !== "" && !isNaN(n) && n >= 0;
+}
+
 export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: string; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -93,6 +101,12 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
       setRegistering(false);
       setApplyDiscount(false);
       setDiscountPercent("");
+      // Sin esto, la próxima vez que se abra "Registrar pago" con el saldo ya en $0 (el
+      // useEffect de abajo solo precarga el monto cuando queda saldo > 0) quedaba el monto
+      // y el tipo (¡incluso "reintegro"!) del pago anterior, invitando a cargar un pago de
+      // más sin darse cuenta.
+      setPayAmount("");
+      setPayType("parcial");
     },
   });
 
@@ -214,7 +228,7 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
                   type="button"
                   className="text-emerald-600 text-xs shrink-0"
                   onClick={() => priceMutation.mutate(priceDraft)}
-                  disabled={priceMutation.isPending}
+                  disabled={priceMutation.isPending || !isValidMoneyInput(priceDraft)}
                 >
                   ✓
                 </button>
@@ -263,7 +277,7 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
                         type="button"
                         className="text-emerald-600 text-xs shrink-0"
                         onClick={() => editAmountMutation.mutate({ id: p.id, amount: amountDraft })}
-                        disabled={editAmountMutation.isPending}
+                        disabled={editAmountMutation.isPending || !isValidMoneyInput(amountDraft)}
                       >
                         ✓
                       </button>
