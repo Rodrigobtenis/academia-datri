@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProfessionals } from "../../lib/api/professionals";
 import { listServices } from "../../lib/api/services";
@@ -7,6 +7,7 @@ import {
   getAppointmentBalancesByIds,
   listAppointmentsForDate,
   listAppointmentsInRange,
+  updateAppointment,
 } from "../../lib/api/appointments";
 import { createAppointmentPayment } from "../../lib/api/appointment-payments";
 import { createBlock, deleteBlock, listBlocksForDate } from "../../lib/api/blocks";
@@ -19,9 +20,11 @@ import { AppointmentDetail } from "./appointment-detail";
 import { BlockForm } from "./block-form";
 import { MONTHS } from "../../lib/months";
 import {
-  APPOINTMENT_DISPLAY_COLORS,
-  APPOINTMENT_DISPLAY_LABELS,
-  getAppointmentDisplayState,
+  APPOINTMENT_STATUS_COLORS,
+  APPOINTMENT_STATUS_LABELS,
+  hasElapsed,
+  needsConfirmationSoon,
+  paymentStatusLabel,
   type AppointmentInput,
   type AppointmentWithDetails,
   type ProfessionalBlock,
@@ -34,16 +37,15 @@ const ROW_HEIGHT = 28; // px por bloque de 30 min
 const TOTAL_SLOTS = (DAY_END_HOUR - DAY_START_HOUR) * 2;
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-// Franja de color a la izquierda del bloque según el estado visual del turno (reservado /
-// sin confirmar a menos de 48hs / confirmado / abonado / cancelado / no asistió) — el
-// bloque en sí queda celeste claro para todos, como en la referencia (AgendaPro).
-const DISPLAY_BORDER: Record<string, string> = {
+// Franja de color a la izquierda del bloque según el estado real del turno (Reservado/
+// Confirmado/Atendido/Cancelado/No asistió) — el bloque en sí queda celeste claro para
+// todos, como en la referencia (AgendaPro). El pago se muestra aparte, como texto.
+const STATUS_BORDER: Record<string, string> = {
   gray: "border-l-gray-400",
   amber: "border-l-amber-500",
   blue: "border-l-blue-500",
   green: "border-l-emerald-500",
   red: "border-l-red-400",
-  brand: "border-l-brand-500",
 };
 
 // Colores distintos por profesional (avatar + franja superior de su columna), asignados
@@ -121,10 +123,22 @@ export function CalendarView() {
     enabled: appointmentIds.length > 0,
   });
 
-  function displayStateFor(a: AppointmentWithDetails) {
+  function paymentLabelFor(a: AppointmentWithDetails) {
     const paid = parseFloat(balances?.[a.id]?.paid_amount ?? "0");
-    return getAppointmentDisplayState(a, paid);
+    return paymentStatusLabel(a.price, paid);
   }
+
+  // Un turno reservado/confirmado cuya hora de fin ya pasó se marca solo como "atendido" —
+  // no implica que esté pago, eso lo resuelve paymentLabelFor con el saldo real.
+  useEffect(() => {
+    const elapsed = (appointments ?? []).filter(hasElapsed);
+    if (elapsed.length === 0) return;
+    Promise.all(elapsed.map((a) => updateAppointment(a.id, { status: "atendido" }))).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["appointments", date] });
+      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointments]);
 
   const monthStart = `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}-01`;
   const monthEnd = new Date(monthCursor.year, monthCursor.month, 1).toISOString().slice(0, 10);
@@ -423,23 +437,24 @@ export function CalendarView() {
                     {appointmentsFor(p.id).map((a: AppointmentWithDetails) => {
                       const top = timeToOffset(a.start_time) * ROW_HEIGHT;
                       const height = Math.max(ROW_HEIGHT, (timeToOffset(a.end_time) - timeToOffset(a.start_time)) * ROW_HEIGHT);
-                      const displayState = displayStateFor(a);
+                      const payment = paymentLabelFor(a);
+                      const urgent = needsConfirmationSoon(a);
                       return (
                         <button
                           key={a.id}
                           onClick={() => setSelectedAppointmentId(a.id)}
-                          title={APPOINTMENT_DISPLAY_LABELS[displayState]}
+                          title={urgent ? "Falta confirmar — arranca en menos de 48hs" : APPOINTMENT_STATUS_LABELS[a.status]}
                           className={`absolute inset-x-0.5 rounded-md pl-2 pr-1.5 py-1 text-left text-[11px] text-gray-800 bg-sky-100 border-l-4 overflow-hidden ${
-                            DISPLAY_BORDER[APPOINTMENT_DISPLAY_COLORS[displayState]]
-                          }`}
+                            STATUS_BORDER[APPOINTMENT_STATUS_COLORS[a.status]]
+                          } ${urgent ? "ring-2 ring-amber-400" : ""}`}
                           style={{ top, height }}
                         >
                           <div className="font-semibold truncate">
                             {a.students?.last_name}, {a.students?.first_name}
                           </div>
                           <div className="truncate text-gray-600">{a.services?.name}</div>
-                          <div className="truncate text-gray-500">
-                            {a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}
+                          <div className={`truncate font-medium ${payment.color === "green" ? "text-emerald-600" : "text-red-600"}`}>
+                            {payment.text}
                           </div>
                         </button>
                       );
@@ -462,12 +477,13 @@ export function CalendarView() {
                   <th className="text-left px-4 py-3 font-medium">Clienta / Motivo</th>
                   <th className="text-left px-4 py-3 font-medium">Servicio</th>
                   <th className="text-left px-4 py-3 font-medium">Estado</th>
+                  <th className="text-left px-4 py-3 font-medium">Pago</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sortedDayItems.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                       Sin turnos ni bloqueos para este día.
                     </td>
                   </tr>
@@ -488,9 +504,17 @@ export function CalendarView() {
                       </td>
                       <td className="px-4 py-2 text-gray-600">{item.data.services?.name}</td>
                       <td className="px-4 py-2">
-                        <Badge color={APPOINTMENT_DISPLAY_COLORS[displayStateFor(item.data)]}>
-                          {APPOINTMENT_DISPLAY_LABELS[displayStateFor(item.data)]}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge color={APPOINTMENT_STATUS_COLORS[item.data.status]}>
+                            {APPOINTMENT_STATUS_LABELS[item.data.status]}
+                          </Badge>
+                          {needsConfirmationSoon(item.data) && (
+                            <span title="Falta confirmar — arranca en menos de 48hs" className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                          )}
+                        </div>
+                      </td>
+                      <td className={`px-4 py-2 font-medium ${paymentLabelFor(item.data).color === "green" ? "text-emerald-600" : "text-red-600"}`}>
+                        {paymentLabelFor(item.data).text}
                       </td>
                     </tr>
                   ) : (
@@ -509,6 +533,7 @@ export function CalendarView() {
                       <td className="px-4 py-2">
                         <Badge color="gray">Bloqueado</Badge>
                       </td>
+                      <td className="px-4 py-2" />
                     </tr>
                   )
                 )}
