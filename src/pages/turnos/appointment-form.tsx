@@ -189,24 +189,27 @@ export function AppointmentForm({
 
   return (
     <Dialog open={open} onClose={handleClose} title="Nuevo turno" wide>
-      {!student ? (
-        <StudentPicker onSelect={setStudent} />
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-            <span className="text-sm font-medium text-gray-800">
-              {student.last_name}, {student.first_name}
-            </span>
-            <button
-              type="button"
-              className="text-xs text-gray-400 hover:text-gray-600"
-              onClick={() => setStudent(null)}
-            >
-              cambiar
-            </button>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Clienta *">
+          {!student ? (
+            <StudentPicker onSelect={setStudent} personLabel="clienta" />
+          ) : (
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+              <span className="text-sm font-medium text-gray-800">
+                {student.last_name}, {student.first_name}
+              </span>
+              <button
+                type="button"
+                className="text-xs text-gray-400 hover:text-gray-600"
+                onClick={() => setStudent(null)}
+              >
+                cambiar
+              </button>
+            </div>
+          )}
+        </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
             <Field label="Servicio *">
               <div ref={serviceBoxRef} className="relative">
                 <TextInput
@@ -352,8 +355,7 @@ export function AppointmentForm({
                     : "Agendar"}
             </Button>
           </div>
-        </form>
-      )}
+      </form>
     </Dialog>
   );
 }

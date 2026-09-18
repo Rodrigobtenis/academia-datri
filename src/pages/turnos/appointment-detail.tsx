@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Field, Select, TextInput, TextArea } from "../../components/ui/field";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
+import { buildWhatsAppLink } from "../../lib/whatsapp";
 import { getAppointment, getAppointmentBalance, updateAppointment } from "../../lib/api/appointments";
 import {
   listAppointmentPayments,
@@ -134,6 +135,9 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
 
   if (!appointment) return null;
 
+  const whatsAppMessage = `Hola ${appointment.students?.first_name}! Te confirmamos tu turno de ${appointment.services?.name} el ${formatDateAR(appointment.appointment_date)} a las ${appointment.start_time.slice(0, 5)}hs con ${appointment.professionals?.first_name}. Respondé este mensaje para confirmar tu asistencia. ¡Gracias!`;
+  const whatsAppLink = buildWhatsAppLink(appointment.students?.phone, whatsAppMessage);
+
   return (
     <Dialog open onClose={onClose} title="Turno" wide>
       <div className="space-y-5">
@@ -150,6 +154,18 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
               {formatDateAR(appointment.appointment_date)} · {appointment.start_time.slice(0, 5)}–
               {appointment.end_time.slice(0, 5)}
             </p>
+            {whatsAppLink ? (
+              <a
+                href={whatsAppLink}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-emerald-600 hover:text-emerald-700"
+              >
+                Confirmar por WhatsApp
+              </a>
+            ) : (
+              <p className="text-xs text-gray-400 mt-2">Sin teléfono cargado para WhatsApp.</p>
+            )}
           </div>
           <Select
             value={appointment.status}

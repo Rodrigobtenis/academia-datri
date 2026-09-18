@@ -7,8 +7,12 @@ import type { Student } from "../types/student";
 
 export function StudentPicker({
   onSelect,
+  personLabel = "alumna",
 }: {
   onSelect: (student: Student) => void;
+  // Mismo directorio de personas (tabla students) para Academia y Turnos — el texto
+  // cambia según el contexto: "alumna" para cursos, "clienta" para turnos del estudio.
+  personLabel?: "alumna" | "clienta";
 }) {
   const [search, setSearch] = useState("");
   const [creatingNew, setCreatingNew] = useState(false);
@@ -49,7 +53,7 @@ export function StudentPicker({
   if (creatingNew) {
     return (
       <div className="space-y-3 border border-gray-200 rounded-lg p-4">
-        <div className="text-sm font-medium text-gray-700">Crear nueva alumna</div>
+        <div className="text-sm font-medium text-gray-700">Crear nueva {personLabel}</div>
         <div className="grid grid-cols-2 gap-3">
           <TextInput
             placeholder="Nombre *"
@@ -82,7 +86,7 @@ export function StudentPicker({
   return (
     <div className="space-y-2">
       <TextInput
-        placeholder="Buscar alumna por nombre, DNI, email..."
+        placeholder={`Buscar ${personLabel} por nombre, DNI, email...`}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         autoFocus
@@ -110,7 +114,7 @@ export function StudentPicker({
         onClick={() => setCreatingNew(true)}
         className="text-sm text-brand-600 hover:text-brand-700"
       >
-        + Crear nueva alumna
+        + Crear nueva {personLabel}
       </button>
     </div>
   );
