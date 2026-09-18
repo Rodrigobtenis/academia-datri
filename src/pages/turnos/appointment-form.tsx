@@ -237,10 +237,10 @@ export function AppointmentForm({
                             key={s.id}
                             type="button"
                             onClick={() => handleServiceChange(s.id)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between gap-2"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-start justify-between gap-2"
                           >
-                            <span className="truncate">{s.name}</span>
-                            <span className="text-xs text-gray-400 shrink-0">{s.duration_minutes} min</span>
+                            <span>{s.name}</span>
+                            <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">{s.duration_minutes} min</span>
                           </button>
                         ))}
                       </div>
