@@ -21,6 +21,7 @@ import GastosPage from "./pages/gastos/gastos-page";
 import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
 import ModelosList from "./pages/modelos/modelos-list";
+import TurnosPage from "./pages/turnos/turnos-page";
 
 // Red de contención global: si CUALQUIER mutación de la app falla y esa pantalla no
 // maneja el error puntualmente, esto igual muestra un toast — así ninguna acción falla
@@ -56,6 +57,7 @@ export default function App() {
             >
               <Route path="/" element={<DashboardPage />} />
               <Route path="/agenda" element={<AgendaPage />} />
+              <Route path="/turnos" element={<TurnosPage />} />
               <Route path="/cursos" element={<CursosList />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />
               <Route path="/cursos/:courseTypeId/:editionId" element={<EditionDetail />} />

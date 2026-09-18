@@ -5,6 +5,7 @@ import { GlobalSearch } from "./global-search";
 import {
   IconHome,
   IconCalendar,
+  IconClock,
   IconCap,
   IconUsers,
   IconCamera,
@@ -20,6 +21,7 @@ import {
 const mainNav = [
   { to: "/", label: "Dashboard", end: true, icon: IconHome },
   { to: "/agenda", label: "Agenda", icon: IconCalendar },
+  { to: "/turnos", label: "Turnos", icon: IconClock },
   { to: "/cursos", label: "Cursos", icon: IconCap },
   { to: "/alumnas", label: "Alumnas", icon: IconUsers },
   { to: "/modelos", label: "Modelos", icon: IconCamera },
