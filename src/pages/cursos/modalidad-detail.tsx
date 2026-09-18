@@ -13,13 +13,11 @@ import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEdition, type CourseEditionInput } from "../../types/course";
-import { useAuth } from "../../lib/auth-context";
 
 export default function ModalidadDetail() {
   const { courseTypeId } = useParams<{ courseTypeId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
 
   const [creating, setCreating] = useState(false);
   const [duplicateFrom, setDuplicateFrom] = useState<CourseEdition | null>(null);
@@ -69,7 +67,7 @@ export default function ModalidadDetail() {
             <p className="text-sm text-gray-500">{courseType.description}</p>
           )}
         </div>
-        {isAdmin && <Button onClick={() => setCreating(true)}>+ Nueva edición</Button>}
+        <Button onClick={() => setCreating(true)}>+ Nueva edición</Button>
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Cargando...</p>}
@@ -113,17 +111,15 @@ export default function ModalidadDetail() {
                     <div className="text-gray-400 text-xs">{occ.occupancy_pct ?? 0}% ocupado</div>
                   </div>
                 )}
-                {isAdmin && (
-                  <Button
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDuplicateFrom(ed);
-                    }}
-                  >
-                    Duplicar
-                  </Button>
-                )}
+                <Button
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDuplicateFrom(ed);
+                  }}
+                >
+                  Duplicar
+                </Button>
               </div>
             </div>
           );
