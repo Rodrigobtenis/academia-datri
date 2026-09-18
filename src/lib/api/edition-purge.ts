@@ -87,10 +87,13 @@ export async function forceDeleteEditionCascade(editionId: string) {
       const { error } = await supabase.from("documents").delete().in("enrollment_id", enrollmentIds);
       if (error) throw error;
     }
-
-    const { error: ePayments } = await supabase.from("payments").delete().in("enrollment_id", enrollmentIds);
-    if (ePayments) throw ePayments;
   }
+
+  // Pagos y gastos de la edición se borran vía RPC (SECURITY DEFINER) en vez de un
+  // delete directo a la tabla: así cualquier activo puede ejecutar esta cascada
+  // puntual sin que eso abra una policy general de "borrar pagos/gastos" en la app.
+  const { error: eFinancials } = await supabase.rpc("purge_edition_financials", { p_edition_id: editionId });
+  if (eFinancials) throw eFinancials;
 
   const { error: eAttendance } = await supabase.from("attendance").delete().eq("course_edition_id", editionId);
   if (eAttendance) throw eAttendance;
@@ -100,9 +103,6 @@ export async function forceDeleteEditionCascade(editionId: string) {
 
   const { error: eWaitlist } = await supabase.from("waitlist").delete().eq("course_edition_id", editionId);
   if (eWaitlist) throw eWaitlist;
-
-  const { error: eExpenses } = await supabase.from("expenses").delete().eq("course_edition_id", editionId);
-  if (eExpenses) throw eExpenses;
 
   if (enrollmentIds.length > 0) {
     const { error: eEnrollments } = await supabase.from("enrollments").delete().eq("course_edition_id", editionId);

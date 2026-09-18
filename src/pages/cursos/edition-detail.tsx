@@ -132,25 +132,23 @@ export default function EditionDetail() {
           </div>
           <p className="text-sm text-gray-500 mt-1">{formatDateAR(edition.start_date)}</p>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              Editar
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                setDeleteError(null);
-                setForceStep(0);
-                setForceSummary(null);
-                setForceError(null);
-                setDeleting(true);
-              }}
-            >
-              Eliminar
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            Editar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              setDeleteError(null);
+              setForceStep(0);
+              setForceSummary(null);
+              setForceError(null);
+              setDeleting(true);
+            }}
+          >
+            Eliminar
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
