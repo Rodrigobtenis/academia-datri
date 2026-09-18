@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { createEnrollment, getBalancesByEdition, listEnrollmentsByEdition, updateEnrollment } from "../../lib/api/enrollments";
-import { createPayment } from "../../lib/api/payments";
+import { createPayment, submitPayment } from "../../lib/api/payments";
 import { addToWaitlist, listWaitlist, removeFromWaitlist } from "../../lib/api/waitlist";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -16,6 +16,7 @@ import {
   type EnrollmentInput,
   type EnrollmentStatus,
 } from "../../types/enrollment";
+import type { PaymentFormValues } from "../../types/payment";
 import type { Student } from "../../types/student";
 import type { EditionOccupancy } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
@@ -70,7 +71,13 @@ export function EditionRoster({
   }
 
   const createMutation = useMutation({
-    mutationFn: (input: EnrollmentInput) => createEnrollment(input),
+    mutationFn: async ({ enrollment, sena }: { enrollment: EnrollmentInput; sena: PaymentFormValues | null }) => {
+      const created = await createEnrollment(enrollment);
+      if (sena) {
+        await submitPayment({ ...sena, enrollment_id: created.id });
+      }
+      return created;
+    },
     onSuccess: () => {
       invalidateAll();
       setEnrolling(false);
@@ -271,7 +278,7 @@ export function EditionRoster({
         key="normal"
         open={enrolling}
         onClose={() => setEnrolling(false)}
-        onSubmit={(values) => createMutation.mutate(values)}
+        onSubmit={(enrollment, sena) => createMutation.mutate({ enrollment, sena })}
         courseEditionId={editionId}
         defaultPrice={listPrice}
         saving={createMutation.isPending}
@@ -281,7 +288,7 @@ export function EditionRoster({
         key="override"
         open={overriding}
         onClose={() => setOverriding(false)}
-        onSubmit={(values) => createMutation.mutate(values)}
+        onSubmit={(enrollment, sena) => createMutation.mutate({ enrollment, sena })}
         courseEditionId={editionId}
         defaultPrice={listPrice}
         saving={createMutation.isPending}
@@ -293,7 +300,7 @@ export function EditionRoster({
           key={`promote-${promoteStudent.id}`}
           open={Boolean(promoteStudent)}
           onClose={() => setPromoteStudent(null)}
-          onSubmit={(values) => createMutation.mutate(values)}
+          onSubmit={(enrollment, sena) => createMutation.mutate({ enrollment, sena })}
           courseEditionId={editionId}
           defaultPrice={listPrice}
           saving={createMutation.isPending}

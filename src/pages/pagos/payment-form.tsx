@@ -2,7 +2,13 @@ import { useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
-import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentInput, type PaymentType } from "../../types/payment";
+import { formatMoney } from "../../lib/money";
+import {
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_TYPE_LABELS,
+  type PaymentFormValues,
+  type PaymentType,
+} from "../../types/payment";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -16,7 +22,7 @@ export function PaymentForm({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: PaymentInput) => void;
+  onSubmit: (values: PaymentFormValues) => void;
   enrollmentId: string;
   suggestedAmount?: string;
   saving?: boolean;
@@ -27,6 +33,22 @@ export function PaymentForm({
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [applyDiscount, setApplyDiscount] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState("");
+
+  const showDiscountOption = paymentMethod === "efectivo" && paymentType !== "reintegro";
+  const discountPct = showDiscountOption && applyDiscount ? parseFloat(discountPercent) || 0 : 0;
+  const nominalAmount = parseFloat(amount) || 0;
+  const discountAmountPreview = discountPct > 0 ? (nominalAmount * discountPct) / 100 : 0;
+  const actualToCollect = nominalAmount - discountAmountPreview;
+
+  function reset() {
+    setAmount("");
+    setReference("");
+    setNotes("");
+    setApplyDiscount(false);
+    setDiscountPercent("");
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,13 +57,12 @@ export function PaymentForm({
       payment_date: paymentDate,
       amount: paymentType === "reintegro" ? String(-Math.abs(parseFloat(amount) || 0)) : amount,
       payment_type: paymentType,
-      payment_method: paymentMethod as PaymentInput["payment_method"],
+      payment_method: paymentMethod as PaymentFormValues["payment_method"],
       reference: reference || null,
       notes: notes || null,
+      cash_discount_percent: discountPct > 0 ? discountPct : null,
     });
-    setAmount("");
-    setReference("");
-    setNotes("");
+    reset();
   }
 
   return (
@@ -95,6 +116,40 @@ export function PaymentForm({
         <Field label="Observaciones">
           <TextArea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
+
+        {showDiscountOption && (
+          <div className="rounded-lg border border-gray-200 p-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={applyDiscount}
+                onChange={(e) => setApplyDiscount(e.target.checked)}
+              />
+              Descuento por pago en efectivo
+            </label>
+            {applyDiscount && (
+              <div className="mt-3 space-y-2">
+                <Field label="% de descuento">
+                  <TextInput
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={100}
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(e.target.value)}
+                  />
+                </Field>
+                {discountPct > 0 && nominalAmount > 0 && (
+                  <p className="text-xs text-gray-500">
+                    El monto de arriba (<strong>{formatMoney(nominalAmount)}</strong>) es lo que se
+                    acredita contra el saldo. Con {discountPct}% de descuento, en efectivo se cobra{" "}
+                    <strong className="text-emerald-600">{formatMoney(actualToCollect)}</strong>.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {paymentType === "reintegro" && (
           <p className="text-xs text-amber-600">

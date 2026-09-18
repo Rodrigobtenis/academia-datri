@@ -24,12 +24,19 @@ export interface Payment {
   void_reason: string | null;
   created_by: string | null;
   created_at: string;
+  cash_discount_percent: string | null;
+  cash_discount_amount: string | null;
 }
 
 export type PaymentInput = Pick<
   Payment,
   "enrollment_id" | "payment_date" | "amount" | "payment_type" | "payment_method" | "reference" | "notes"
 >;
+
+// Payload del formulario de pago: "amount" es siempre el monto NOMINAL (lo que se carga
+// antes de cualquier descuento) — si cash_discount_percent tiene valor, el monto realmente
+// cobrado y acreditado se calculan a partir de ahí (ver register_cash_discount_payment).
+export type PaymentFormValues = PaymentInput & { cash_discount_percent: number | null };
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   sena: "Seña",

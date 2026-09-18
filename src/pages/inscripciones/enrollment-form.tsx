@@ -5,8 +5,11 @@ import { Button } from "../../components/ui/button";
 import { StudentPicker } from "../../components/student-picker";
 import { formatMoney } from "../../lib/money";
 import { ENROLLMENT_STATUS_LABELS, type DiscountType, type EnrollmentInput } from "../../types/enrollment";
+import { PAYMENT_METHOD_LABELS, type PaymentFormValues, type PaymentMethod } from "../../types/payment";
 import type { Student } from "../../types/student";
 import { useAuth } from "../../lib/auth-context";
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 export function EnrollmentForm({
   open,
@@ -20,7 +23,7 @@ export function EnrollmentForm({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: EnrollmentInput) => void;
+  onSubmit: (values: EnrollmentInput, sena: PaymentFormValues | null) => void;
   courseEditionId: string;
   defaultPrice: string;
   saving?: boolean;
@@ -36,6 +39,12 @@ export function EnrollmentForm({
   const [status, setStatus] = useState<EnrollmentInput["status"]>("reservada");
   const [notes, setNotes] = useState("");
 
+  const [addSena, setAddSena] = useState(false);
+  const [senaAmount, setSenaAmount] = useState("");
+  const [senaMethod, setSenaMethod] = useState<PaymentMethod>("efectivo");
+  const [senaApplyDiscount, setSenaApplyDiscount] = useState(false);
+  const [senaDiscountPercent, setSenaDiscountPercent] = useState("");
+
   const finalPrice = useMemo(() => {
     const orig = parseFloat(originalPrice) || 0;
     const disc = parseFloat(discountValue) || 0;
@@ -43,6 +52,11 @@ export function EnrollmentForm({
     if (discountType === "monto") return Math.max(0, orig - disc);
     return Math.max(0, orig * (1 - disc / 100));
   }, [originalPrice, discountType, discountValue]);
+
+  const senaShowDiscount = addSena && senaMethod === "efectivo";
+  const senaDiscountPct = senaShowDiscount && senaApplyDiscount ? parseFloat(senaDiscountPercent) || 0 : 0;
+  const senaNominal = parseFloat(senaAmount) || 0;
+  const senaActualToCollect = senaDiscountPct > 0 ? senaNominal - (senaNominal * senaDiscountPct) / 100 : senaNominal;
 
   function reset() {
     setStudent(presetStudent ?? null);
@@ -52,6 +66,11 @@ export function EnrollmentForm({
     setDiscountReason("");
     setStatus("reservada");
     setNotes("");
+    setAddSena(false);
+    setSenaAmount("");
+    setSenaMethod("efectivo");
+    setSenaApplyDiscount(false);
+    setSenaDiscountPercent("");
   }
 
   function handleClose() {
@@ -62,21 +81,39 @@ export function EnrollmentForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!student) return;
-    onSubmit({
-      student_id: student.id,
-      course_edition_id: courseEditionId,
-      original_price: originalPrice,
-      discount_type: discountType || null,
-      discount_value: discountType ? discountValue || "0" : null,
-      discount_reason: discountType ? discountReason || null : null,
-      discount_authorized_by: discountType ? profile?.id ?? null : null,
-      final_price: String(finalPrice),
-      status,
-      sales_responsible: profile?.id ?? null,
-      override_capacity: Boolean(overrideCapacity),
-      override_authorized_by: overrideCapacity ? profile?.id ?? null : null,
-      notes: notes || null,
-    });
+
+    const sena: PaymentFormValues | null =
+      addSena && senaNominal > 0
+        ? {
+            enrollment_id: "",
+            payment_date: today(),
+            amount: senaAmount,
+            payment_type: "sena",
+            payment_method: senaMethod,
+            reference: null,
+            notes: null,
+            cash_discount_percent: senaDiscountPct > 0 ? senaDiscountPct : null,
+          }
+        : null;
+
+    onSubmit(
+      {
+        student_id: student.id,
+        course_edition_id: courseEditionId,
+        original_price: originalPrice,
+        discount_type: discountType || null,
+        discount_value: discountType ? discountValue || "0" : null,
+        discount_reason: discountType ? discountReason || null : null,
+        discount_authorized_by: discountType ? profile?.id ?? null : null,
+        final_price: String(finalPrice),
+        status,
+        sales_responsible: profile?.id ?? null,
+        override_capacity: Boolean(overrideCapacity),
+        override_authorized_by: overrideCapacity ? profile?.id ?? null : null,
+        notes: notes || null,
+      },
+      sena
+    );
     reset();
   }
 
@@ -155,6 +192,72 @@ export function EnrollmentForm({
           <Field label="Notas">
             <TextArea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
+
+          <div className="rounded-lg border border-gray-200 p-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={addSena} onChange={(e) => setAddSena(e.target.checked)} />
+              Cobrar una seña ahora
+            </label>
+            {addSena && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Monto de la seña *">
+                    <TextInput
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      required={addSena}
+                      value={senaAmount}
+                      onChange={(e) => setSenaAmount(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Método">
+                    <Select value={senaMethod} onChange={(e) => setSenaMethod(e.target.value as PaymentMethod)}>
+                      {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </div>
+
+                {senaShowDiscount && (
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={senaApplyDiscount}
+                        onChange={(e) => setSenaApplyDiscount(e.target.checked)}
+                      />
+                      Descuento por pago en efectivo
+                    </label>
+                    {senaApplyDiscount && (
+                      <div className="mt-2 space-y-2">
+                        <Field label="% de descuento">
+                          <TextInput
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            max={100}
+                            value={senaDiscountPercent}
+                            onChange={(e) => setSenaDiscountPercent(e.target.value)}
+                          />
+                        </Field>
+                        {senaDiscountPct > 0 && senaNominal > 0 && (
+                          <p className="text-xs text-gray-500">
+                            Se acreditan <strong>{formatMoney(senaNominal)}</strong> contra el saldo. Con{" "}
+                            {senaDiscountPct}% de descuento, en efectivo se cobra{" "}
+                            <strong className="text-emerald-600">{formatMoney(senaActualToCollect)}</strong>.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {overrideCapacity && (
             <p className="text-xs text-amber-600">

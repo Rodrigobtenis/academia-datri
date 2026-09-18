@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { getEnrollmentFull, getBalance } from "../../lib/api/enrollments";
-import { createPayment, listPaymentsByEnrollment, voidPayment } from "../../lib/api/payments";
+import { listPaymentsByEnrollment, submitPayment, voidPayment } from "../../lib/api/payments";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { PaymentForm } from "../pagos/payment-form";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS } from "../../types/enrollment";
-import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentInput } from "../../types/payment";
+import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentFormValues } from "../../types/payment";
 import { useAuth } from "../../lib/auth-context";
 import { DocumentsCard } from "../../components/documents-card";
 
@@ -46,9 +46,10 @@ export default function InscripcionDetail() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (input: PaymentInput) => createPayment(input),
+    mutationFn: (input: PaymentFormValues) => submitPayment(input),
     onSuccess: () => {
       invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["enrollment-full", enrollmentId] });
       setRegistering(false);
     },
   });
@@ -58,6 +59,7 @@ export default function InscripcionDetail() {
       voidPayment(id, reason, profile?.id ?? null),
     onSuccess: () => {
       invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["enrollment-full", enrollmentId] });
       setVoidingId(null);
       setVoidReason("");
     },
@@ -160,6 +162,12 @@ export default function InscripcionDetail() {
                   {formatMoney(p.amount)} · {PAYMENT_TYPE_LABELS[p.payment_type]} ·{" "}
                   {PAYMENT_METHOD_LABELS[p.payment_method]}
                 </div>
+                {p.cash_discount_percent && (
+                  <div className="text-xs text-emerald-600">
+                    {p.cash_discount_percent}% desc. efectivo — se acreditaron{" "}
+                    {formatMoney(parseFloat(p.amount) + parseFloat(p.cash_discount_amount ?? "0"))} contra el saldo
+                  </div>
+                )}
                 {p.status === "anulado" && (
                   <div className="text-xs text-red-500">Anulado: {p.void_reason}</div>
                 )}
