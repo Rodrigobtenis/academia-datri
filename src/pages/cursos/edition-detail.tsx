@@ -170,7 +170,11 @@ export default function EditionDetail() {
           <section className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos de la edición</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <InfoRow label="Sede" value={edition.location} />
+              {edition.modality === "online" ? (
+                <InfoRow label="Link de acceso" value={edition.access_link} />
+              ) : (
+                <InfoRow label="Sede" value={edition.location} />
+              )}
               <InfoRow label="Docente" value={edition.teacher} />
               <InfoRow label="Precio" value={formatMoney(edition.list_price)} />
             </div>
@@ -182,42 +186,68 @@ export default function EditionDetail() {
             )}
           </section>
 
-          <EditionRoster editionId={edition.id} listPrice={edition.list_price} occupancy={occupancy} />
+          <EditionRoster
+            editionId={edition.id}
+            listPrice={edition.list_price}
+            occupancy={occupancy}
+            modality={edition.modality}
+          />
 
           <EditionAttendance editionId={edition.id} />
         </div>
 
         <div className="space-y-6">
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Cupos</h2>
-            {occupancy ? (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Cupos totales</span>
-                  <span className="font-medium text-gray-900">{occupancy.max_students}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Inscriptas</span>
-                  <span className="font-medium text-gray-900">{occupancy.enrolled_count}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Disponibles</span>
-                  <span className="font-medium text-gray-900">{occupancy.available}</span>
-                </div>
-                <div className="pt-2">
-                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                    <div
-                      className={`h-full ${full ? "bg-red-500" : "bg-brand-500"}`}
-                      style={{ width: `${Math.min(100, occupancy.occupancy_pct ?? 0)}%` }}
-                    />
+          {edition.modality === "online" ? (
+            <section className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">Acceso</h2>
+              {edition.access_link ? (
+                <a
+                  href={edition.access_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-brand-600 hover:text-brand-700 break-all"
+                >
+                  {edition.access_link}
+                </a>
+              ) : (
+                <p className="text-sm text-gray-400">Sin link cargado — editá la edición para agregarlo.</p>
+              )}
+              <p className="text-xs text-gray-400 mt-3">
+                Marcá "Acceso enviado" por alumna en la lista de inscriptas cuando le compartas este link.
+              </p>
+            </section>
+          ) : (
+            <section className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">Cupos</h2>
+              {occupancy ? (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Cupos totales</span>
+                    <span className="font-medium text-gray-900">{occupancy.max_students}</span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">{occupancy.occupancy_pct ?? 0}% ocupación</div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Inscriptas</span>
+                    <span className="font-medium text-gray-900">{occupancy.enrolled_count}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Disponibles</span>
+                    <span className="font-medium text-gray-900">{occupancy.available}</span>
+                  </div>
+                  <div className="pt-2">
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full ${full ? "bg-red-500" : "bg-brand-500"}`}
+                        style={{ width: `${Math.min(100, occupancy.occupancy_pct ?? 0)}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">{occupancy.occupancy_pct ?? 0}% ocupación</div>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">—</p>
-            )}
-          </section>
+              ) : (
+                <p className="text-sm text-gray-400">—</p>
+              )}
+            </section>
+          )}
 
           {isAdmin && <EditionExpenses editionId={edition.id} />}
         </div>

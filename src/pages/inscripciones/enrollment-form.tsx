@@ -110,6 +110,7 @@ export function EnrollmentForm({
         sales_responsible: profile?.id ?? null,
         override_capacity: Boolean(overrideCapacity),
         override_authorized_by: overrideCapacity ? profile?.id ?? null : null,
+        access_sent: false,
         notes: notes || null,
       },
       sena

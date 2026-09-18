@@ -18,17 +18,19 @@ import {
 } from "../../types/enrollment";
 import type { PaymentFormValues } from "../../types/payment";
 import type { Student } from "../../types/student";
-import type { EditionOccupancy } from "../../types/course";
+import type { EditionModality, EditionOccupancy } from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
 
 export function EditionRoster({
   editionId,
   listPrice,
   occupancy,
+  modality,
 }: {
   editionId: string;
   listPrice: string;
   occupancy: EditionOccupancy | null | undefined;
+  modality: EditionModality;
 }) {
   const navigate = useNavigate();
   const { courseTypeId } = useParams<{ courseTypeId: string }>();
@@ -136,6 +138,12 @@ export function EditionRoster({
     onSuccess: invalidateAll,
   });
 
+  const accessSentMutation = useMutation({
+    mutationFn: ({ id, access_sent }: { id: string; access_sent: boolean }) =>
+      updateEnrollment(id, { access_sent }),
+    onSuccess: invalidateAll,
+  });
+
   function handleStatusChange(enrollmentId: string, currentStatus: EnrollmentStatus, newStatus: EnrollmentStatus, balance: string) {
     if (newStatus === "confirmada" && currentStatus !== "confirmada") {
       setSenaAmount(balance);
@@ -183,12 +191,13 @@ export function EditionRoster({
               <th className="text-right py-2 font-medium">Precio final</th>
               <th className="text-right py-2 font-medium">Pagado</th>
               <th className="text-right py-2 font-medium">Saldo</th>
+              {modality === "online" && <th className="text-center py-2 font-medium">Acceso enviado</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {enrollments?.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-gray-400">
+                <td colSpan={modality === "online" ? 6 : 5} className="py-6 text-center text-gray-400">
                   Todavía no hay alumnas inscriptas.
                 </td>
               </tr>
@@ -231,6 +240,15 @@ export function EditionRoster({
                       )}
                     </button>
                   </td>
+                  {modality === "online" && (
+                    <td className="py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={e.access_sent}
+                        onChange={(ev) => accessSentMutation.mutate({ id: e.id, access_sent: ev.target.checked })}
+                      />
+                    </td>
+                  )}
                 </tr>
               );
             })}

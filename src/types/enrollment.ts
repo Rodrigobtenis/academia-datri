@@ -25,6 +25,7 @@ export interface Enrollment {
   sales_responsible: string | null;
   override_capacity: boolean;
   override_authorized_by: string | null;
+  access_sent: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;

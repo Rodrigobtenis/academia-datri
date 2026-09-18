@@ -31,6 +31,7 @@ export interface CourseEdition {
   promo_price: string | null;
   status: EditionStatus;
   modality: EditionModality;
+  access_link: string | null;
   description: string | null;
   includes: string | null;
   materials: string | null;

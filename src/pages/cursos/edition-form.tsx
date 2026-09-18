@@ -12,6 +12,12 @@ import {
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
+// Un curso online no tiene cupo real — en vez de meter "sin límite" en toda la lógica de
+// ocupación/lista de espera que ya existe para presencial, se le pone un tope alto que en
+// la práctica nunca se alcanza, así el resto de la app no necesita saber que "online" es
+// distinto.
+const ONLINE_MAX_STUDENTS = 999;
+
 function emptyForm(courseTypeId: string, defaultModality: EditionModality): CourseEditionInput {
   return {
     course_type_id: courseTypeId,
@@ -22,11 +28,12 @@ function emptyForm(courseTypeId: string, defaultModality: EditionModality): Cour
     end_time: null,
     location: "",
     teacher: "",
-    max_students: 10,
+    max_students: defaultModality === "online" ? ONLINE_MAX_STUDENTS : 10,
     list_price: "0",
     promo_price: null,
     status: "borrador",
     modality: defaultModality,
+    access_link: "",
     description: null,
     includes: null,
     materials: "",
@@ -68,6 +75,12 @@ export function EditionForm({
       ...f,
       modality,
       start_date: modality === "online" ? todayISO() : f.start_date === todayISO() ? "" : f.start_date,
+      max_students:
+        modality === "online"
+          ? ONLINE_MAX_STUDENTS
+          : f.max_students === ONLINE_MAX_STUDENTS
+            ? 10
+            : f.max_students,
     }));
   }
 
@@ -75,10 +88,14 @@ export function EditionForm({
     e.preventDefault();
     onSubmit({
       ...form,
-      start_date: form.modality === "online" ? todayISO() : form.start_date,
+      // Si ya tenía fecha (online existente que se está editando) se respeta tal cual —
+      // solo se completa con hoy si por algún motivo llegó vacía (online recién creada).
+      start_date: form.modality === "online" ? form.start_date || todayISO() : form.start_date,
+      max_students: form.modality === "online" ? ONLINE_MAX_STUDENTS : form.max_students,
       location: form.location || null,
       teacher: form.teacher || null,
       materials: form.materials || null,
+      access_link: form.modality === "online" ? form.access_link || null : null,
       name: form.name || null,
     });
   }
@@ -121,29 +138,36 @@ export function EditionForm({
               />
             </Field>
           )}
-          <Field label="Dirección / sede">
-            <TextInput
-              disabled={form.modality === "online"}
-              placeholder={form.modality === "online" ? "No aplica" : undefined}
-              value={form.location ?? ""}
-              onChange={(e) => update("location", e.target.value)}
-            />
-          </Field>
+          {form.modality === "online" ? (
+            <Field label="Link de acceso">
+              <TextInput
+                placeholder="Grupo, Drive, plataforma..."
+                value={form.access_link ?? ""}
+                onChange={(e) => update("access_link", e.target.value)}
+              />
+            </Field>
+          ) : (
+            <Field label="Dirección / sede">
+              <TextInput value={form.location ?? ""} onChange={(e) => update("location", e.target.value)} />
+            </Field>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Docente">
             <TextInput value={form.teacher ?? ""} onChange={(e) => update("teacher", e.target.value)} />
           </Field>
-          <Field label="Cupos máximos *">
-            <TextInput
-              type="number"
-              min={1}
-              required
-              value={form.max_students}
-              onChange={(e) => update("max_students", Number(e.target.value))}
-            />
-          </Field>
+          {form.modality !== "online" && (
+            <Field label="Cupos máximos *">
+              <TextInput
+                type="number"
+                min={1}
+                required
+                value={form.max_students}
+                onChange={(e) => update("max_students", Number(e.target.value))}
+              />
+            </Field>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
