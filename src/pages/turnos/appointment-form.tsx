@@ -1,23 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
 import { StudentPicker } from "../../components/student-picker";
-import { listProfessionalAppointmentsForDate } from "../../lib/api/appointments";
-import { listProfessionalBlocksForDate } from "../../lib/api/blocks";
+import { ServicePicker } from "./service-picker";
+import { addMinutes, findScheduleConflicts, type ScheduleConflict } from "./schedule-utils";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../types/payment";
 import type { AppointmentInput } from "../../types/appointment";
 import type { Professional } from "../../types/professional";
 import type { Service } from "../../types/service";
 import type { Student } from "../../types/student";
-
-function addMinutes(time: string, minutes: number) {
-  const [h, m] = time.split(":").map(Number);
-  const total = h * 60 + m + minutes;
-  const hh = Math.floor(total / 60) % 24;
-  const mm = total % 60;
-  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-}
 
 export interface AppointmentSena {
   amount: string;
@@ -58,52 +50,20 @@ export function AppointmentForm({
   const [senaAmount, setSenaAmount] = useState("");
   const [senaMethod, setSenaMethod] = useState<PaymentMethod>("efectivo");
 
-  const [conflicts, setConflicts] = useState<{ label: string } [] | null>(null);
+  const [conflicts, setConflicts] = useState<ScheduleConflict[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [serviceQuery, setServiceQuery] = useState("");
-  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
-  const serviceBoxRef = useRef<HTMLDivElement>(null);
-
   const service = services.find((s) => s.id === serviceId);
-
-  useEffect(() => {
-    if (!serviceDropdownOpen) setServiceQuery(service ? service.name : "");
-  }, [service, serviceDropdownOpen]);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (serviceBoxRef.current && !serviceBoxRef.current.contains(e.target as Node)) {
-        setServiceDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
 
   const endTime = useMemo(
     () => (service ? addMinutes(startTime, service.duration_minutes) : startTime),
     [startTime, service]
   );
 
-  const matchingServices = useMemo(() => {
-    const q = serviceQuery.trim().toLowerCase();
-    const filtered = q ? services.filter((s) => s.name.toLowerCase().includes(q)) : services;
-    const groups = new Map<string, Service[]>();
-    for (const s of filtered) {
-      const key = s.category || "Sin categoría";
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(s);
-    }
-    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [services, serviceQuery]);
-
   function reset() {
     setStudent(null);
     setServiceId("");
-    setServiceQuery("");
-    setServiceDropdownOpen(false);
     setProfessionalId(defaultProfessionalId ?? "");
     setStartTime(defaultStartTime ?? "09:00");
     setPrice("0");
@@ -120,43 +80,18 @@ export function AppointmentForm({
     onClose();
   }
 
-  function handleServiceChange(id: string) {
-    setServiceId(id);
-    const s = services.find((sv) => sv.id === id);
-    if (s) {
-      setPrice(s.price);
-      setServiceQuery(s.name);
-    }
-    setServiceDropdownOpen(false);
+  function handleServiceChange(s: Service) {
+    setServiceId(s.id);
+    setPrice(s.price);
     setConflicts(null);
   }
 
   async function checkConflicts(): Promise<boolean> {
     setChecking(true);
     try {
-      const [existing, blocks] = await Promise.all([
-        listProfessionalAppointmentsForDate(professionalId, date),
-        listProfessionalBlocksForDate(professionalId, date),
-      ]);
-      // Normalizamos a "HH:MM": la base devuelve "HH:MM:SS" y comparar strings de distinta
-      // longitud como "10:00" vs "10:00:00" da un falso "mayor que" aunque sea la misma hora.
-      const overlapsRange = (start: string, end: string) => start.slice(0, 5) < endTime && end.slice(0, 5) > startTime;
-      const overlappingAppointments = existing.filter((a) => overlapsRange(a.start_time, a.end_time));
-      const overlappingBlocks = blocks.filter((b) => overlapsRange(b.start_time, b.end_time));
-
-      if (overlappingAppointments.length > 0 || overlappingBlocks.length > 0) {
-        setConflicts([
-          ...overlappingAppointments.map((a) => ({
-            label: `${a.students?.last_name ?? "—"}, ${a.students?.first_name ?? ""} (${a.start_time.slice(0, 5)}–${a.end_time.slice(0, 5)})`,
-          })),
-          ...overlappingBlocks.map((b) => ({
-            label: `Horario bloqueado${b.reason ? ` — ${b.reason}` : ""} (${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)})`,
-          })),
-        ]);
-        return false;
-      }
-      setConflicts(null);
-      return true;
+      const found = await findScheduleConflicts(professionalId, date, startTime, endTime);
+      setConflicts(found.length > 0 ? found : null);
+      return found.length === 0;
     } finally {
       setChecking(false);
     }
@@ -230,43 +165,7 @@ export function AppointmentForm({
 
         <div className="grid grid-cols-2 gap-4">
             <Field label="Servicio *">
-              <div ref={serviceBoxRef} className="relative">
-                <TextInput
-                  value={serviceQuery}
-                  onChange={(e) => {
-                    setServiceQuery(e.target.value);
-                    setServiceDropdownOpen(true);
-                  }}
-                  onFocus={() => setServiceDropdownOpen(true)}
-                  placeholder="Buscar servicio..."
-                  required
-                />
-                {serviceDropdownOpen && (
-                  <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-                    {matchingServices.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-400">Sin resultados.</div>
-                    )}
-                    {matchingServices.map(([category, group]) => (
-                      <div key={category}>
-                        <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-50 sticky top-0">
-                          {category}
-                        </div>
-                        {group.map((s) => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => handleServiceChange(s.id)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-start justify-between gap-2"
-                          >
-                            <span>{s.name}</span>
-                            <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap">{s.duration_minutes} min</span>
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ServicePicker services={services} selectedId={serviceId} onSelect={handleServiceChange} />
             </Field>
             <Field label="Profesional *">
               <Select
