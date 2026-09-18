@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProfessionals } from "../../lib/api/professionals";
 import { listServices } from "../../lib/api/services";
-import { createAppointment, listAppointmentsForDate, listAppointmentsInRange } from "../../lib/api/appointments";
+import {
+  createAppointment,
+  getAppointmentBalancesByIds,
+  listAppointmentsForDate,
+  listAppointmentsInRange,
+} from "../../lib/api/appointments";
 import { createAppointmentPayment } from "../../lib/api/appointment-payments";
 import { createBlock, deleteBlock, listBlocksForDate } from "../../lib/api/blocks";
 import { Button } from "../../components/ui/button";
@@ -14,8 +19,9 @@ import { AppointmentDetail } from "./appointment-detail";
 import { BlockForm } from "./block-form";
 import { MONTHS } from "../../lib/months";
 import {
-  APPOINTMENT_STATUS_COLORS,
-  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_DISPLAY_COLORS,
+  APPOINTMENT_DISPLAY_LABELS,
+  getAppointmentDisplayState,
   type AppointmentInput,
   type AppointmentWithDetails,
   type ProfessionalBlock,
@@ -28,15 +34,32 @@ const ROW_HEIGHT = 28; // px por bloque de 30 min
 const TOTAL_SLOTS = (DAY_END_HOUR - DAY_START_HOUR) * 2;
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-// Franja de color a la izquierda del bloque según el estado del turno — el bloque en sí
-// queda celeste claro para todos, como en la referencia (AgendaPro).
-const STATUS_BORDER: Record<string, string> = {
+// Franja de color a la izquierda del bloque según el estado visual del turno (reservado /
+// sin confirmar a menos de 48hs / confirmado / abonado / cancelado / no asistió) — el
+// bloque en sí queda celeste claro para todos, como en la referencia (AgendaPro).
+const DISPLAY_BORDER: Record<string, string> = {
   gray: "border-l-gray-400",
+  amber: "border-l-amber-500",
   blue: "border-l-blue-500",
   green: "border-l-emerald-500",
   red: "border-l-red-400",
-  amber: "border-l-amber-500",
+  brand: "border-l-brand-500",
 };
+
+// Colores distintos por profesional (avatar + franja superior de su columna), asignados
+// por orden — así se distinguen bien de un vistazo sin depender de subir una foto.
+const PROFESSIONAL_PALETTE = [
+  { bg: "bg-rose-100", text: "text-rose-700", accent: "bg-rose-400" },
+  { bg: "bg-sky-100", text: "text-sky-700", accent: "bg-sky-400" },
+  { bg: "bg-violet-100", text: "text-violet-700", accent: "bg-violet-400" },
+  { bg: "bg-amber-100", text: "text-amber-700", accent: "bg-amber-400" },
+  { bg: "bg-emerald-100", text: "text-emerald-700", accent: "bg-emerald-400" },
+  { bg: "bg-fuchsia-100", text: "text-fuchsia-700", accent: "bg-fuchsia-400" },
+];
+
+function professionalColor(index: number) {
+  return PROFESSIONAL_PALETTE[index % PROFESSIONAL_PALETTE.length];
+}
 
 function timeToOffset(time: string) {
   const [h, m] = time.slice(0, 5).split(":").map(Number);
@@ -91,6 +114,18 @@ export function CalendarView() {
     queryFn: () => listBlocksForDate(date),
   });
 
+  const appointmentIds = (appointments ?? []).map((a) => a.id);
+  const { data: balances } = useQuery({
+    queryKey: ["appointment-balances", date, appointmentIds.join(",")],
+    queryFn: () => getAppointmentBalancesByIds(appointmentIds),
+    enabled: appointmentIds.length > 0,
+  });
+
+  function displayStateFor(a: AppointmentWithDetails) {
+    const paid = parseFloat(balances?.[a.id]?.paid_amount ?? "0");
+    return getAppointmentDisplayState(a, paid);
+  }
+
   const monthStart = `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}-01`;
   const monthEnd = new Date(monthCursor.year, monthCursor.month, 1).toISOString().slice(0, 10);
 
@@ -107,6 +142,7 @@ export function CalendarView() {
     queryClient.invalidateQueries({ queryKey: ["appointments", date] });
     queryClient.invalidateQueries({ queryKey: ["blocks", date] });
     queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+    queryClient.invalidateQueries({ queryKey: ["appointment-balances"] });
   }
 
   const createMutation = useMutation({
@@ -195,6 +231,18 @@ export function CalendarView() {
   function professionalName(id: string) {
     const p = activeProfessionals.find((pr) => pr.id === id);
     return p ? `${p.first_name} ${p.last_name}` : "—";
+  }
+
+  function ProfessionalTag({ id }: { id: string }) {
+    const index = activeProfessionals.findIndex((pr) => pr.id === id);
+    if (index === -1) return <>—</>;
+    const color = professionalColor(index);
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${color.accent}`} />
+        {professionalName(id)}
+      </span>
+    );
   }
 
   const sortedDayItems = [
@@ -328,10 +376,13 @@ export function CalendarView() {
               ))}
             </div>
             <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${activeProfessionals.length}, 1fr)` }}>
-              {activeProfessionals.map((p) => (
+              {activeProfessionals.map((p, index) => {
+                const color = professionalColor(index);
+                return (
                 <div key={p.id} className="border-l border-gray-100">
+                  <div className={`h-1 ${color.accent}`} />
                   <div className="border-b border-gray-100 flex flex-col items-center justify-center gap-1 py-2 px-1 text-center">
-                    <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
+                    <div className={`w-8 h-8 rounded-full ${color.bg} ${color.text} flex items-center justify-center text-xs font-semibold shrink-0`}>
                       {p.first_name.slice(0, 1).toUpperCase()}
                     </div>
                     <span className="text-xs font-medium text-gray-700 truncate max-w-full">
@@ -372,12 +423,14 @@ export function CalendarView() {
                     {appointmentsFor(p.id).map((a: AppointmentWithDetails) => {
                       const top = timeToOffset(a.start_time) * ROW_HEIGHT;
                       const height = Math.max(ROW_HEIGHT, (timeToOffset(a.end_time) - timeToOffset(a.start_time)) * ROW_HEIGHT);
+                      const displayState = displayStateFor(a);
                       return (
                         <button
                           key={a.id}
                           onClick={() => setSelectedAppointmentId(a.id)}
+                          title={APPOINTMENT_DISPLAY_LABELS[displayState]}
                           className={`absolute inset-x-0.5 rounded-md pl-2 pr-1.5 py-1 text-left text-[11px] text-gray-800 bg-sky-100 border-l-4 overflow-hidden ${
-                            STATUS_BORDER[APPOINTMENT_STATUS_COLORS[a.status]]
+                            DISPLAY_BORDER[APPOINTMENT_DISPLAY_COLORS[displayState]]
                           }`}
                           style={{ top, height }}
                         >
@@ -393,7 +446,8 @@ export function CalendarView() {
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -428,14 +482,14 @@ export function CalendarView() {
                       <td className="px-4 py-2">
                         {item.data.start_time.slice(0, 5)}–{item.data.end_time.slice(0, 5)}
                       </td>
-                      <td className="px-4 py-2">{professionalName(item.data.professional_id)}</td>
+                      <td className="px-4 py-2"><ProfessionalTag id={item.data.professional_id} /></td>
                       <td className="px-4 py-2 font-medium text-gray-900">
                         {item.data.students?.last_name}, {item.data.students?.first_name}
                       </td>
                       <td className="px-4 py-2 text-gray-600">{item.data.services?.name}</td>
                       <td className="px-4 py-2">
-                        <Badge color={APPOINTMENT_STATUS_COLORS[item.data.status]}>
-                          {APPOINTMENT_STATUS_LABELS[item.data.status]}
+                        <Badge color={APPOINTMENT_DISPLAY_COLORS[displayStateFor(item.data)]}>
+                          {APPOINTMENT_DISPLAY_LABELS[displayStateFor(item.data)]}
                         </Badge>
                       </td>
                     </tr>
@@ -448,7 +502,7 @@ export function CalendarView() {
                       <td className="px-4 py-2">
                         {item.data.start_time.slice(0, 5)}–{item.data.end_time.slice(0, 5)}
                       </td>
-                      <td className="px-4 py-2">{professionalName(item.data.professional_id)}</td>
+                      <td className="px-4 py-2"><ProfessionalTag id={item.data.professional_id} /></td>
                       <td className="px-4 py-2 italic" colSpan={2}>
                         {item.data.reason || "No disponible"}
                       </td>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
@@ -7,17 +7,20 @@ import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { getAppointment, getAppointmentBalance, updateAppointment } from "../../lib/api/appointments";
 import {
-  createAppointmentPayment,
   listAppointmentPayments,
+  submitAppointmentPayment,
+  updateAppointmentPaymentAmount,
   voidAppointmentPayment,
 } from "../../lib/api/appointment-payments";
 import {
   APPOINTMENT_STATUS_LABELS,
-  type AppointmentPaymentInput,
+  type AppointmentPaymentFormValues,
   type AppointmentStatus,
 } from "../../types/appointment";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentMethod, type PaymentType } from "../../types/payment";
 import { useAuth } from "../../lib/auth-context";
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: string; onClose: () => void }) {
   const queryClient = useQueryClient();
@@ -25,12 +28,17 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
   const [registering, setRegistering] = useState(false);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceDraft, setPriceDraft] = useState("");
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [amountDraft, setAmountDraft] = useState("");
 
-  const today = () => new Date().toISOString().slice(0, 10);
   const [payDate, setPayDate] = useState(today());
   const [payAmount, setPayAmount] = useState("");
   const [payType, setPayType] = useState<PaymentType>("parcial");
   const [payMethod, setPayMethod] = useState<PaymentMethod>("efectivo");
+  const [applyDiscount, setApplyDiscount] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState("");
 
   const { data: appointment } = useQuery({
     queryKey: ["appointment", appointmentId],
@@ -47,12 +55,21 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
     queryFn: () => listAppointmentPayments(appointmentId),
   });
 
+  const balanceAmount = parseFloat(balance?.balance ?? appointment?.price ?? "0");
+
+  // Sugiere pagar lo que queda después de la seña — se recalcula cada vez que cambia el
+  // saldo real (por ejemplo, al abrir el diálogo de nuevo después de un pago anterior).
+  useEffect(() => {
+    if (registering && balanceAmount > 0) setPayAmount(String(balanceAmount));
+  }, [registering, balanceAmount]);
+
   function invalidateAll() {
     queryClient.invalidateQueries({ queryKey: ["appointment", appointmentId] });
     queryClient.invalidateQueries({ queryKey: ["appointment-balance", appointmentId] });
     queryClient.invalidateQueries({ queryKey: ["appointment-payments", appointmentId] });
     queryClient.invalidateQueries({ queryKey: ["appointments"] });
     queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+    queryClient.invalidateQueries({ queryKey: ["appointment-balances"] });
   }
 
   const statusMutation = useMutation({
@@ -60,12 +77,29 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
     onSuccess: invalidateAll,
   });
 
+  const priceMutation = useMutation({
+    mutationFn: (price: string) => updateAppointment(appointmentId, { price }),
+    onSuccess: () => {
+      invalidateAll();
+      setEditingPrice(false);
+    },
+  });
+
   const paymentMutation = useMutation({
-    mutationFn: (input: AppointmentPaymentInput) => createAppointmentPayment(input),
+    mutationFn: (values: AppointmentPaymentFormValues) => submitAppointmentPayment(values),
     onSuccess: () => {
       invalidateAll();
       setRegistering(false);
-      setPayAmount("");
+      setApplyDiscount(false);
+      setDiscountPercent("");
+    },
+  });
+
+  const editAmountMutation = useMutation({
+    mutationFn: ({ id, amount }: { id: string; amount: string }) => updateAppointmentPaymentAmount(id, amount),
+    onSuccess: () => {
+      invalidateAll();
+      setEditingPaymentId(null);
     },
   });
 
@@ -79,6 +113,11 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
     },
   });
 
+  const showDiscountOption = payMethod === "efectivo" && payType !== "reintegro";
+  const discountPct = showDiscountOption && applyDiscount ? parseFloat(discountPercent) || 0 : 0;
+  const nominalAmount = parseFloat(payAmount) || 0;
+  const actualToCollect = discountPct > 0 ? nominalAmount - (nominalAmount * discountPct) / 100 : nominalAmount;
+
   function handlePaymentSubmit(e: FormEvent) {
     e.preventDefault();
     paymentMutation.mutate({
@@ -89,12 +128,11 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
       payment_method: payMethod,
       reference: null,
       notes: null,
+      cash_discount_percent: discountPct > 0 ? discountPct : null,
     });
   }
 
   if (!appointment) return null;
-
-  const balanceAmount = parseFloat(balance?.balance ?? appointment.price);
 
   return (
     <Dialog open onClose={onClose} title="Turno" wide>
@@ -130,8 +168,47 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
 
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div className="bg-gray-50 rounded-lg p-3">
-            <div className="text-xs text-gray-400">Precio</div>
-            <div className="font-semibold text-gray-900">{formatMoney(appointment.price)}</div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-gray-400">Precio</div>
+              {!editingPrice && (
+                <button
+                  type="button"
+                  className="text-xs text-brand-600 hover:text-brand-700"
+                  onClick={() => {
+                    setPriceDraft(appointment.price);
+                    setEditingPrice(true);
+                  }}
+                >
+                  Editar
+                </button>
+              )}
+            </div>
+            {editingPrice ? (
+              <div className="flex items-center gap-1 mt-1">
+                <TextInput
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  autoFocus
+                  value={priceDraft}
+                  onChange={(e) => setPriceDraft(e.target.value)}
+                  className="!py-1 text-sm"
+                />
+                <button
+                  type="button"
+                  className="text-emerald-600 text-xs shrink-0"
+                  onClick={() => priceMutation.mutate(priceDraft)}
+                  disabled={priceMutation.isPending}
+                >
+                  ✓
+                </button>
+                <button type="button" className="text-gray-400 text-xs shrink-0" onClick={() => setEditingPrice(false)}>
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="font-semibold text-gray-900">{formatMoney(appointment.price)}</div>
+            )}
           </div>
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-xs text-gray-400">Pagado</div>
@@ -153,17 +230,66 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
           <div className="divide-y divide-gray-100">
             {payments?.length === 0 && <p className="text-sm text-gray-400 py-3">Sin pagos registrados.</p>}
             {payments?.map((p) => (
-              <div key={p.id} className="py-2 flex items-center justify-between text-sm">
-                <div className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-900"}>
-                  {formatDateAR(p.payment_date)} · {formatMoney(p.amount)} · {PAYMENT_TYPE_LABELS[p.payment_type]} ·{" "}
-                  {PAYMENT_METHOD_LABELS[p.payment_method]}
+              <div key={p.id} className="py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  {editingPaymentId === p.id ? (
+                    <div className="flex items-center gap-1 flex-1">
+                      <TextInput
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        autoFocus
+                        value={amountDraft}
+                        onChange={(e) => setAmountDraft(e.target.value)}
+                        className="!py-1 text-sm max-w-[140px]"
+                      />
+                      <button
+                        type="button"
+                        className="text-emerald-600 text-xs shrink-0"
+                        onClick={() => editAmountMutation.mutate({ id: p.id, amount: amountDraft })}
+                        disabled={editAmountMutation.isPending}
+                      >
+                        ✓
+                      </button>
+                      <button
+                        type="button"
+                        className="text-gray-400 text-xs shrink-0"
+                        onClick={() => setEditingPaymentId(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-900"}>
+                      {formatDateAR(p.payment_date)} · {formatMoney(p.amount)} · {PAYMENT_TYPE_LABELS[p.payment_type]} ·{" "}
+                      {PAYMENT_METHOD_LABELS[p.payment_method]}
+                    </div>
+                  )}
+                  {p.status === "valido" && editingPaymentId !== p.id && (
+                    <div className="flex gap-1 shrink-0">
+                      {!p.cash_discount_percent && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingPaymentId(p.id);
+                            setAmountDraft(p.amount);
+                          }}
+                        >
+                          Editar
+                        </Button>
+                      )}
+                      <Button variant="ghost" onClick={() => setVoidingId(p.id)}>
+                        Anular
+                      </Button>
+                    </div>
+                  )}
+                  {p.status === "anulado" && <span className="text-xs text-red-500 shrink-0">Anulado</span>}
                 </div>
-                {p.status === "valido" ? (
-                  <Button variant="ghost" onClick={() => setVoidingId(p.id)}>
-                    Anular
-                  </Button>
-                ) : (
-                  <span className="text-xs text-red-500">Anulado</span>
+                {p.cash_discount_percent && (
+                  <div className="text-xs text-emerald-600 mt-0.5">
+                    {p.cash_discount_percent}% desc. efectivo — se acreditaron{" "}
+                    {formatMoney(parseFloat(p.amount) + parseFloat(p.cash_discount_amount ?? "0"))} contra el saldo
+                  </div>
                 )}
               </div>
             ))}
@@ -214,6 +340,37 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
               </Select>
             </Field>
           </div>
+
+          {showDiscountOption && (
+            <div className="rounded-lg border border-gray-200 p-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={applyDiscount} onChange={(e) => setApplyDiscount(e.target.checked)} />
+                Descuento por pago en efectivo
+              </label>
+              {applyDiscount && (
+                <div className="mt-3 space-y-2">
+                  <Field label="% de descuento">
+                    <TextInput
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      max={100}
+                      value={discountPercent}
+                      onChange={(e) => setDiscountPercent(e.target.value)}
+                    />
+                  </Field>
+                  {discountPct > 0 && nominalAmount > 0 && (
+                    <p className="text-xs text-gray-500">
+                      El monto de arriba (<strong>{formatMoney(nominalAmount)}</strong>) es lo que se acredita
+                      contra el saldo. Con {discountPct}% de descuento, en efectivo se cobra{" "}
+                      <strong className="text-emerald-600">{formatMoney(actualToCollect)}</strong>.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="secondary" onClick={() => setRegistering(false)}>
               Cancelar

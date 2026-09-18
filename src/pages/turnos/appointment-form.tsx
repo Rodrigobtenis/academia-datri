@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
@@ -58,25 +58,48 @@ export function AppointmentForm({
   const [conflicts, setConflicts] = useState<{ label: string } [] | null>(null);
   const [checking, setChecking] = useState(false);
 
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const serviceBoxRef = useRef<HTMLDivElement>(null);
+
   const service = services.find((s) => s.id === serviceId);
+
+  useEffect(() => {
+    if (!serviceDropdownOpen) setServiceQuery(service ? service.name : "");
+  }, [service, serviceDropdownOpen]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (serviceBoxRef.current && !serviceBoxRef.current.contains(e.target as Node)) {
+        setServiceDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
   const endTime = useMemo(
     () => (service ? addMinutes(startTime, service.duration_minutes) : startTime),
     [startTime, service]
   );
 
-  const servicesByCategory = useMemo(() => {
+  const matchingServices = useMemo(() => {
+    const q = serviceQuery.trim().toLowerCase();
+    const filtered = q ? services.filter((s) => s.name.toLowerCase().includes(q)) : services;
     const groups = new Map<string, Service[]>();
-    for (const s of services) {
+    for (const s of filtered) {
       const key = s.category || "Sin categoría";
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(s);
     }
     return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [services]);
+  }, [services, serviceQuery]);
 
   function reset() {
     setStudent(null);
     setServiceId(services[0]?.id ?? "");
+    setServiceQuery(services[0]?.name ?? "");
+    setServiceDropdownOpen(false);
     setProfessionalId(defaultProfessionalId ?? professionals[0]?.id ?? "");
     setStartTime(defaultStartTime ?? "09:00");
     setPrice(services[0]?.price ?? "0");
@@ -95,7 +118,11 @@ export function AppointmentForm({
   function handleServiceChange(id: string) {
     setServiceId(id);
     const s = services.find((sv) => sv.id === id);
-    if (s) setPrice(s.price);
+    if (s) {
+      setPrice(s.price);
+      setServiceQuery(s.name);
+    }
+    setServiceDropdownOpen(false);
     setConflicts(null);
   }
 
@@ -181,17 +208,43 @@ export function AppointmentForm({
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Servicio *">
-              <Select value={serviceId} onChange={(e) => handleServiceChange(e.target.value)} required>
-                {servicesByCategory.map(([category, group]) => (
-                  <optgroup key={category} label={category}>
-                    {group.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.duration_minutes} min)
-                      </option>
+              <div ref={serviceBoxRef} className="relative">
+                <TextInput
+                  value={serviceQuery}
+                  onChange={(e) => {
+                    setServiceQuery(e.target.value);
+                    setServiceDropdownOpen(true);
+                  }}
+                  onFocus={() => setServiceDropdownOpen(true)}
+                  placeholder="Buscar servicio..."
+                  required
+                />
+                {serviceDropdownOpen && (
+                  <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                    {matchingServices.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-400">Sin resultados.</div>
+                    )}
+                    {matchingServices.map(([category, group]) => (
+                      <div key={category}>
+                        <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-50 sticky top-0">
+                          {category}
+                        </div>
+                        {group.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => handleServiceChange(s.id)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between gap-2"
+                          >
+                            <span className="truncate">{s.name}</span>
+                            <span className="text-xs text-gray-400 shrink-0">{s.duration_minutes} min</span>
+                          </button>
+                        ))}
+                      </div>
                     ))}
-                  </optgroup>
-                ))}
-              </Select>
+                  </div>
+                )}
+              </div>
             </Field>
             <Field label="Profesional *">
               <Select

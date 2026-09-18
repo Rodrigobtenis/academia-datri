@@ -49,6 +49,50 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, "gray" | "blue
   no_asistio: "amber",
 };
 
+// Estado "visual" del turno: distingue reservado / necesita confirmación urgente (falta
+// menos de 48hs y no está confirmado) / confirmado / abonado (saldo en $0) — además de los
+// dos estados terminales cancelado/no_asistio. Es lo que se pinta en el calendario; el
+// estado real sigue siendo AppointmentStatus (lo que se cambia en el desplegable).
+export type AppointmentDisplayState = "reservado" | "urgente" | "confirmado" | "abonado" | "cancelado" | "no_asistio";
+
+export const APPOINTMENT_DISPLAY_LABELS: Record<AppointmentDisplayState, string> = {
+  reservado: "Reservado",
+  urgente: "Sin confirmar (falta menos de 48hs)",
+  confirmado: "Confirmado",
+  abonado: "Abonado",
+  cancelado: "Cancelado",
+  no_asistio: "No asistió",
+};
+
+export const APPOINTMENT_DISPLAY_COLORS: Record<AppointmentDisplayState, "gray" | "amber" | "blue" | "green" | "red" | "brand"> = {
+  reservado: "gray",
+  urgente: "amber",
+  confirmado: "blue",
+  abonado: "green",
+  cancelado: "red",
+  no_asistio: "brand",
+};
+
+const CONFIRMATION_DEADLINE_HOURS = 48;
+
+export function getAppointmentDisplayState(
+  appointment: { status: AppointmentStatus; appointment_date: string; start_time: string; price: string },
+  paidAmount: number
+): AppointmentDisplayState {
+  if (appointment.status === "cancelado") return "cancelado";
+  if (appointment.status === "no_asistio") return "no_asistio";
+
+  const price = parseFloat(appointment.price);
+  if (price > 0 && paidAmount >= price) return "abonado";
+
+  if (appointment.status === "confirmado" || appointment.status === "atendido") return "confirmado";
+
+  const start = new Date(`${appointment.appointment_date}T${appointment.start_time.slice(0, 8)}`);
+  const hoursUntilStart = (start.getTime() - Date.now()) / (1000 * 60 * 60);
+  if (hoursUntilStart <= CONFIRMATION_DEADLINE_HOURS) return "urgente";
+  return "reservado";
+}
+
 // Mismo esquema que Payment (types/payment.ts) pero para turnos en vez de inscripciones.
 export interface AppointmentPayment {
   id: string;
@@ -65,12 +109,16 @@ export interface AppointmentPayment {
   void_reason: string | null;
   created_by: string | null;
   created_at: string;
+  cash_discount_percent: string | null;
+  cash_discount_amount: string | null;
 }
 
 export type AppointmentPaymentInput = Pick<
   AppointmentPayment,
   "appointment_id" | "payment_date" | "amount" | "payment_type" | "payment_method" | "reference" | "notes"
 >;
+
+export type AppointmentPaymentFormValues = AppointmentPaymentInput & { cash_discount_percent: number | null };
 
 export interface ProfessionalBlock {
   id: string;

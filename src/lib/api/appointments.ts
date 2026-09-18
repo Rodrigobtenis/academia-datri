@@ -78,3 +78,14 @@ export async function getAppointmentBalance(appointmentId: string) {
   if (error) throw error;
   return data as AppointmentBalance | null;
 }
+
+// Para pintar el calendario según cuánto se pagó de cada turno (ver getAppointmentDisplayState
+// en types/appointment.ts) sin hacer una consulta por turno.
+export async function getAppointmentBalancesByIds(ids: string[]) {
+  if (ids.length === 0) return {} as Record<string, AppointmentBalance>;
+  const { data, error } = await supabase.from("v_appointment_balance").select("*").in("appointment_id", ids);
+  if (error) throw error;
+  const map: Record<string, AppointmentBalance> = {};
+  for (const row of data as AppointmentBalance[]) map[row.appointment_id] = row;
+  return map;
+}
