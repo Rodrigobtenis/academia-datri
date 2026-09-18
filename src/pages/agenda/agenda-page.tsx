@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { listEditionsInRange } from "../../lib/api/courses";
+import { createEdition, listCourseTypes, listEditionsInRange } from "../../lib/api/courses";
 import { formatDateAR } from "../../lib/date-ar";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS } from "../../types/course";
+import { Dialog } from "../../components/ui/dialog";
+import { Field, Select } from "../../components/ui/field";
+import { EditionForm } from "../cursos/edition-form";
+import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
 import { MONTHS } from "../../lib/months";
 
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -27,6 +30,11 @@ export default function AgendaPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [view, setView] = useState<"mes" | "lista">("mes");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [pickingType, setPickingType] = useState(false);
+  const [pickedType, setPickedType] = useState("");
+  const [creatingForType, setCreatingForType] = useState<string | null>(null);
 
   const rangeStart = `${year}-${String(month).padStart(2, "0")}-01`;
   const rangeEnd = new Date(year, month, 1).toISOString().slice(0, 10);
@@ -35,6 +43,31 @@ export default function AgendaPage() {
     queryKey: ["agenda", month, year],
     queryFn: () => listEditionsInRange(rangeStart, rangeEnd),
   });
+
+  const { data: courseTypes } = useQuery({
+    queryKey: ["course-types"],
+    queryFn: listCourseTypes,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (input: CourseEditionInput) => createEdition(input),
+    onSuccess: (edition) => {
+      queryClient.invalidateQueries({ queryKey: ["agenda"] });
+      setCreatingForType(null);
+      navigate(`/cursos/${edition.course_type_id}/${edition.id}`);
+    },
+  });
+
+  function startCreating() {
+    setPickedType(courseTypes?.[0]?.id ?? "");
+    setPickingType(true);
+  }
+
+  function confirmType() {
+    if (!pickedType) return;
+    setPickingType(false);
+    setCreatingForType(pickedType);
+  }
 
   const byDay = useMemo(() => {
     const map: Record<number, typeof editions> = {};
@@ -65,6 +98,7 @@ export default function AgendaPage() {
           <Button variant="secondary" onClick={() => setView(view === "mes" ? "lista" : "mes")}>
             Ver {view === "mes" ? "lista" : "mes"}
           </Button>
+          <Button onClick={startCreating}>+ Nueva edición</Button>
         </div>
       </div>
 
@@ -157,6 +191,39 @@ export default function AgendaPage() {
           </table>
           </div>
         </div>
+      )}
+
+      <Dialog open={pickingType} onClose={() => setPickingType(false)} title="Nueva edición">
+        <div className="space-y-4">
+          <Field label="Modalidad *">
+            <Select value={pickedType} onChange={(e) => setPickedType(e.target.value)}>
+              {courseTypes?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setPickingType(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={confirmType} disabled={!pickedType}>
+              Continuar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {creatingForType && (
+        <EditionForm
+          open={Boolean(creatingForType)}
+          onClose={() => setCreatingForType(null)}
+          onSubmit={(values) => createMutation.mutate(values)}
+          courseTypeId={creatingForType}
+          title="Nueva edición"
+          saving={createMutation.isPending}
+        />
       )}
     </div>
   );

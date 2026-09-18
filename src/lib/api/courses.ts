@@ -33,10 +33,14 @@ export async function listEditions(courseTypeId: string) {
   return data as CourseEdition[];
 }
 
+// Solo presenciales: se usa para Agenda y "cursos próximos", donde una fecha real
+// importa. Las ediciones online no tienen agenda (se registran con la fecha de carga
+// solo para que cuenten en el mes corriente en reportes/gestión).
 export async function listEditionsInRange(start: string, end: string) {
   const { data, error } = await supabase
     .from("course_editions")
     .select("*, course_types(id, name)")
+    .eq("modality", "presencial")
     .gte("start_date", start)
     .lt("start_date", end)
     .order("start_date", { ascending: true });

@@ -14,6 +14,8 @@ export type EditionStatus =
   | "finalizado"
   | "cancelado";
 
+export type EditionModality = "presencial" | "online";
+
 export interface CourseEdition {
   id: string;
   course_type_id: string;
@@ -28,6 +30,7 @@ export interface CourseEdition {
   list_price: string;
   promo_price: string | null;
   status: EditionStatus;
+  modality: EditionModality;
   description: string | null;
   includes: string | null;
   materials: string | null;
@@ -63,4 +66,14 @@ export const EDITION_STATUS_COLORS: Record<EditionStatus, "gray" | "green" | "bl
   completo: "amber",
   finalizado: "gray",
   cancelado: "red",
+};
+
+export const EDITION_MODALITY_LABELS: Record<EditionModality, string> = {
+  presencial: "Presencial",
+  online: "Online",
+};
+
+export const EDITION_MODALITY_COLORS: Record<EditionModality, "blue" | "brand"> = {
+  presencial: "blue",
+  online: "brand",
 };

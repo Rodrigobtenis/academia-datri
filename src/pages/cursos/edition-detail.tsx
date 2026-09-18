@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { deleteEdition, getEdition, getOccupancy, updateEdition } from "../../lib/api/courses";
 import {
   forceDeleteEditionCascade,
@@ -15,7 +15,13 @@ import { EditionExpenses } from "../gastos/edition-expenses";
 import { EditionAttendance } from "../asistencia/edition-attendance";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
-import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEditionInput } from "../../types/course";
+import {
+  EDITION_MODALITY_COLORS,
+  EDITION_MODALITY_LABELS,
+  EDITION_STATUS_COLORS,
+  EDITION_STATUS_LABELS,
+  type CourseEditionInput,
+} from "../../types/course";
 import { useAuth } from "../../lib/auth-context";
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
@@ -32,6 +38,8 @@ export default function EditionDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
+  const tipoQuery = searchParams.get("tipo") ? `?tipo=${searchParams.get("tipo")}` : "";
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -113,7 +121,7 @@ export default function EditionDetail() {
   return (
     <div className="p-8 max-w-5xl">
       <button
-        onClick={() => navigate(`/cursos/${courseTypeId}`)}
+        onClick={() => navigate(`/cursos/${courseTypeId}${tipoQuery}`)}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
       >
         ← Ediciones
@@ -123,14 +131,20 @@ export default function EditionDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-gray-900">
-              {edition.name || `Edición del ${formatDateAR(edition.start_date)}`}
+              {edition.name ||
+                (edition.modality === "online" ? "Edición online" : `Edición del ${formatDateAR(edition.start_date)}`)}
             </h1>
             <Badge color={EDITION_STATUS_COLORS[edition.status]}>
               {EDITION_STATUS_LABELS[edition.status]}
             </Badge>
+            <Badge color={EDITION_MODALITY_COLORS[edition.modality]}>
+              {EDITION_MODALITY_LABELS[edition.modality]}
+            </Badge>
             {full && <Badge color="red">CURSO COMPLETO</Badge>}
           </div>
-          <p className="text-sm text-gray-500 mt-1">{formatDateAR(edition.start_date)}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {edition.modality === "online" ? "Sin agenda" : formatDateAR(edition.start_date)}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setEditing(true)}>

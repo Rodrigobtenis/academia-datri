@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   createEdition,
   getCourseType,
@@ -12,12 +12,23 @@ import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
-import { EDITION_STATUS_COLORS, EDITION_STATUS_LABELS, type CourseEdition, type CourseEditionInput } from "../../types/course";
+import {
+  EDITION_MODALITY_COLORS,
+  EDITION_MODALITY_LABELS,
+  EDITION_STATUS_COLORS,
+  EDITION_STATUS_LABELS,
+  type CourseEdition,
+  type CourseEditionInput,
+  type EditionModality,
+} from "../../types/course";
 
 export default function ModalidadDetail() {
   const { courseTypeId } = useParams<{ courseTypeId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const tipo = searchParams.get("tipo") as EditionModality | null;
+  const tipoQuery = tipo ? `?tipo=${tipo}` : "";
 
   const [creating, setCreating] = useState(false);
   const [duplicateFrom, setDuplicateFrom] = useState<CourseEdition | null>(null);
@@ -28,11 +39,16 @@ export default function ModalidadDetail() {
     enabled: Boolean(courseTypeId),
   });
 
-  const { data: editions, isLoading } = useQuery({
+  const { data: allEditions, isLoading } = useQuery({
     queryKey: ["editions", courseTypeId],
     queryFn: () => listEditions(courseTypeId!),
     enabled: Boolean(courseTypeId),
   });
+
+  const editions = useMemo(
+    () => (tipo ? allEditions?.filter((ed) => ed.modality === tipo) : allEditions),
+    [allEditions, tipo]
+  );
 
   const { data: occupancy } = useQuery({
     queryKey: ["occupancy", courseTypeId],
@@ -47,22 +63,25 @@ export default function ModalidadDetail() {
       queryClient.invalidateQueries({ queryKey: ["occupancy", courseTypeId] });
       setCreating(false);
       setDuplicateFrom(null);
-      navigate(`/cursos/${courseTypeId}/${edition.id}`);
+      navigate(`/cursos/${courseTypeId}/${edition.id}${tipoQuery}`);
     },
   });
 
   return (
     <div className="p-8">
       <button
-        onClick={() => navigate("/cursos")}
+        onClick={() => navigate(`/cursos${tipoQuery}`)}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
       >
-        ← Modalidades
+        ← Modalidades{tipo ? ` (${EDITION_MODALITY_LABELS[tipo]})` : ""}
       </button>
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">{courseType?.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold text-gray-900">{courseType?.name}</h1>
+            {tipo && <Badge color={EDITION_MODALITY_COLORS[tipo]}>{EDITION_MODALITY_LABELS[tipo]}</Badge>}
+          </div>
           {courseType?.description && (
             <p className="text-sm text-gray-500">{courseType.description}</p>
           )}
@@ -72,7 +91,11 @@ export default function ModalidadDetail() {
 
       {isLoading && <p className="text-sm text-gray-400">Cargando...</p>}
       {!isLoading && editions?.length === 0 && (
-        <p className="text-sm text-gray-400">Todavía no hay ediciones para esta modalidad.</p>
+        <p className="text-sm text-gray-400">
+          {tipo
+            ? `Todavía no hay ediciones ${tipo === "online" ? "online" : "presenciales"} para esta modalidad.`
+            : "Todavía no hay ediciones para esta modalidad."}
+        </p>
       )}
 
       <div className="space-y-3">
@@ -82,19 +105,24 @@ export default function ModalidadDetail() {
             <div
               key={ed.id}
               className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between hover:border-brand-300 transition cursor-pointer"
-              onClick={() => navigate(`/cursos/${courseTypeId}/${ed.id}`)}
+              onClick={() => navigate(`/cursos/${courseTypeId}/${ed.id}${tipoQuery}`)}
             >
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-900">
-                    {ed.name || `Edición del ${formatDateAR(ed.start_date)}`}
+                    {ed.name || (ed.modality === "online" ? "Edición online" : `Edición del ${formatDateAR(ed.start_date)}`)}
                   </span>
                   <Badge color={EDITION_STATUS_COLORS[ed.status]}>
                     {EDITION_STATUS_LABELS[ed.status]}
                   </Badge>
+                  {!tipo && (
+                    <Badge color={EDITION_MODALITY_COLORS[ed.modality]}>
+                      {EDITION_MODALITY_LABELS[ed.modality]}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {formatDateAR(ed.start_date)}
+                  {ed.modality === "online" ? "Sin agenda" : formatDateAR(ed.start_date)}
                   {ed.location ? ` · ${ed.location}` : ""}
                   {ed.teacher ? ` · ${ed.teacher}` : ""}
                   {" · "}
@@ -134,6 +162,7 @@ export default function ModalidadDetail() {
           courseTypeId={courseTypeId}
           title="Nueva edición"
           saving={createMutation.isPending}
+          defaultModality={tipo ?? "presencial"}
         />
       )}
 
@@ -146,6 +175,7 @@ export default function ModalidadDetail() {
           title={`Duplicar: ${duplicateFrom.name || "edición"}`}
           initial={{ ...duplicateFrom, name: duplicateFrom.name ? `${duplicateFrom.name} (copia)` : "" }}
           saving={createMutation.isPending}
+          defaultModality={duplicateFrom.modality}
         />
       )}
     </div>

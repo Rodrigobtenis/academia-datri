@@ -32,6 +32,7 @@ export async function getAlerts(): Promise<Alert[]> {
     supabase
       .from("course_editions")
       .select("id, name, start_date, course_type_id, max_students, course_types(id, name)")
+      .eq("modality", "presencial")
       .gte("start_date", today)
       .lte("start_date", soon)
       .in("status", ["abierto", "proximo", "completo"])

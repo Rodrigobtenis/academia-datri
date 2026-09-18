@@ -2,13 +2,21 @@ import { useState, type FormEvent } from "react";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
-import { EDITION_STATUS_LABELS, type CourseEdition, type CourseEditionInput } from "../../types/course";
+import {
+  EDITION_MODALITY_LABELS,
+  EDITION_STATUS_LABELS,
+  type CourseEdition,
+  type CourseEditionInput,
+  type EditionModality,
+} from "../../types/course";
 
-function emptyForm(courseTypeId: string): CourseEditionInput {
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+function emptyForm(courseTypeId: string, defaultModality: EditionModality): CourseEditionInput {
   return {
     course_type_id: courseTypeId,
     name: "",
-    start_date: "",
+    start_date: defaultModality === "online" ? todayISO() : "",
     end_date: null,
     start_time: null,
     end_time: null,
@@ -18,6 +26,7 @@ function emptyForm(courseTypeId: string): CourseEditionInput {
     list_price: "0",
     promo_price: null,
     status: "borrador",
+    modality: defaultModality,
     description: null,
     includes: null,
     materials: "",
@@ -34,6 +43,7 @@ export function EditionForm({
   initial,
   title,
   saving,
+  defaultModality = "presencial",
 }: {
   open: boolean;
   onClose: () => void;
@@ -42,9 +52,10 @@ export function EditionForm({
   initial?: Partial<CourseEdition> | null;
   title: string;
   saving?: boolean;
+  defaultModality?: EditionModality;
 }) {
   const [form, setForm] = useState<CourseEditionInput>(() => ({
-    ...emptyForm(courseTypeId),
+    ...emptyForm(courseTypeId, defaultModality),
     ...initial,
   }));
 
@@ -52,10 +63,19 @@ export function EditionForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function setModality(modality: EditionModality) {
+    setForm((f) => ({
+      ...f,
+      modality,
+      start_date: modality === "online" ? todayISO() : f.start_date === todayISO() ? "" : f.start_date,
+    }));
+  }
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     onSubmit({
       ...form,
+      start_date: form.modality === "online" ? todayISO() : form.start_date,
       location: form.location || null,
       teacher: form.teacher || null,
       materials: form.materials || null,
@@ -74,17 +94,40 @@ export function EditionForm({
           />
         </Field>
 
+        <Field label="Modalidad">
+          <Select value={form.modality} onChange={(e) => setModality(e.target.value as EditionModality)}>
+            {Object.entries(EDITION_MODALITY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Fecha *">
-            <TextInput
-              type="date"
-              required
-              value={form.start_date}
-              onChange={(e) => update("start_date", e.target.value)}
-            />
-          </Field>
+          {form.modality === "online" ? (
+            <Field label="Fecha">
+              <div className="flex items-center h-[38px] px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-400">
+                Sin agenda — cuenta para el mes en curso
+              </div>
+            </Field>
+          ) : (
+            <Field label="Fecha *">
+              <TextInput
+                type="date"
+                required
+                value={form.start_date}
+                onChange={(e) => update("start_date", e.target.value)}
+              />
+            </Field>
+          )}
           <Field label="Dirección / sede">
-            <TextInput value={form.location ?? ""} onChange={(e) => update("location", e.target.value)} />
+            <TextInput
+              disabled={form.modality === "online"}
+              placeholder={form.modality === "online" ? "No aplica" : undefined}
+              value={form.location ?? ""}
+              onChange={(e) => update("location", e.target.value)}
+            />
           </Field>
         </div>
 
