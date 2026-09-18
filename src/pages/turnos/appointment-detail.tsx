@@ -52,6 +52,7 @@ export function AppointmentDetail({ appointmentId, onClose }: { appointmentId: s
     queryClient.invalidateQueries({ queryKey: ["appointment-balance", appointmentId] });
     queryClient.invalidateQueries({ queryKey: ["appointment-payments", appointmentId] });
     queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
   }
 
   const statusMutation = useMutation({

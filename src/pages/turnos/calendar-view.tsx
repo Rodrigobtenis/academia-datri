@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listProfessionals } from "../../lib/api/professionals";
 import { listServices } from "../../lib/api/services";
-import { createAppointment, listAppointmentsForDate } from "../../lib/api/appointments";
+import { createAppointment, listAppointmentsForDate, listAppointmentsInRange } from "../../lib/api/appointments";
 import { createAppointmentPayment } from "../../lib/api/appointment-payments";
 import { createBlock, deleteBlock, listBlocksForDate } from "../../lib/api/blocks";
 import { Button } from "../../components/ui/button";
@@ -12,6 +12,7 @@ import { formatDateAR } from "../../lib/date-ar";
 import { AppointmentForm, type AppointmentSena } from "./appointment-form";
 import { AppointmentDetail } from "./appointment-detail";
 import { BlockForm } from "./block-form";
+import { MONTHS } from "../../lib/months";
 import {
   APPOINTMENT_STATUS_COLORS,
   APPOINTMENT_STATUS_LABELS,
@@ -25,6 +26,7 @@ const DAY_START_HOUR = 8;
 const DAY_END_HOUR = 21;
 const ROW_HEIGHT = 28; // px por bloque de 30 min
 const TOTAL_SLOTS = (DAY_END_HOUR - DAY_START_HOUR) * 2;
+const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const STATUS_BG: Record<string, string> = {
   gray: "bg-gray-400",
@@ -43,10 +45,25 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function buildMonthGrid(year: number, month: number) {
+  const firstDay = new Date(year, month - 1, 1);
+  const startWeekday = (firstDay.getDay() + 6) % 7; // lunes = 0
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
 export function CalendarView() {
   const queryClient = useQueryClient();
   const [date, setDate] = useState(todayISO());
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<"mes" | "grid" | "list">("mes");
+  const [monthCursor, setMonthCursor] = useState(() => {
+    const d = new Date();
+    return { month: d.getMonth() + 1, year: d.getFullYear() };
+  });
   const [booking, setBooking] = useState<{ professionalId?: string; startTime?: string } | null>(null);
   const [blocking, setBlocking] = useState<{ professionalId?: string; startTime?: string } | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
@@ -72,12 +89,22 @@ export function CalendarView() {
     queryFn: () => listBlocksForDate(date),
   });
 
+  const monthStart = `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}-01`;
+  const monthEnd = new Date(monthCursor.year, monthCursor.month, 1).toISOString().slice(0, 10);
+
+  const { data: monthAppointments } = useQuery({
+    queryKey: ["appointments-month", monthCursor.year, monthCursor.month],
+    queryFn: () => listAppointmentsInRange(monthStart, monthEnd),
+    enabled: view === "mes",
+  });
+
   const activeProfessionals = (professionals ?? []).filter((p) => p.active);
   const activeServices = (services ?? []).filter((s) => s.active);
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["appointments", date] });
     queryClient.invalidateQueries({ queryKey: ["blocks", date] });
+    queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
   }
 
   const createMutation = useMutation({
@@ -124,6 +151,37 @@ export function CalendarView() {
     setDate(d.toISOString().slice(0, 10));
   }
 
+  function changeMonth(delta: number) {
+    const d = new Date(monthCursor.year, monthCursor.month - 1 + delta, 1);
+    setMonthCursor({ month: d.getMonth() + 1, year: d.getFullYear() });
+  }
+
+  function goToToday() {
+    const today = todayISO();
+    setDate(today);
+    const d = new Date();
+    setMonthCursor({ month: d.getMonth() + 1, year: d.getFullYear() });
+  }
+
+  function openDay(day: number) {
+    const iso = `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setDate(iso);
+    setView("grid");
+  }
+
+  const appointmentCountByDay = (monthAppointments ?? []).reduce<Record<number, number>>((acc, a) => {
+    if (a.status === "cancelado") return acc;
+    const day = Number(a.appointment_date.slice(8, 10));
+    acc[day] = (acc[day] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const monthCells = buildMonthGrid(monthCursor.year, monthCursor.month);
+  const todayDayNumber =
+    todayISO().slice(0, 7) === `${monthCursor.year}-${String(monthCursor.month).padStart(2, "0")}`
+      ? Number(todayISO().slice(8, 10))
+      : null;
+
   function appointmentsFor(professionalId: string) {
     return (appointments ?? []).filter((a) => a.professional_id === professionalId && a.status !== "cancelado");
   }
@@ -147,22 +205,53 @@ export function CalendarView() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Button variant="secondary" onClick={() => changeDay(-1)}>
-          ←
-        </Button>
-        <Button variant="secondary" onClick={() => setDate(todayISO())}>
-          Hoy
-        </Button>
-        <Button variant="secondary" onClick={() => changeDay(1)}>
-          →
-        </Button>
-        <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} className="!w-auto" />
-        <span className="text-sm font-medium text-gray-800 hidden sm:inline">{formatDateAR(date)}</span>
+        {view === "mes" ? (
+          <>
+            <Button variant="secondary" onClick={() => changeMonth(-1)}>
+              ←
+            </Button>
+            <Button variant="secondary" onClick={goToToday}>
+              Hoy
+            </Button>
+            <Button variant="secondary" onClick={() => changeMonth(1)}>
+              →
+            </Button>
+            <span className="text-sm font-medium text-gray-800">
+              {MONTHS[monthCursor.month - 1]} {monthCursor.year}
+            </span>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setView("mes")}
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
+              ← Mes
+            </button>
+            <Button variant="secondary" onClick={() => changeDay(-1)}>
+              ←
+            </Button>
+            <Button variant="secondary" onClick={goToToday}>
+              Hoy
+            </Button>
+            <Button variant="secondary" onClick={() => changeDay(1)}>
+              →
+            </Button>
+            <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} className="!w-auto" />
+            <span className="text-sm font-medium text-gray-800 hidden sm:inline">{formatDateAR(date)}</span>
+          </>
+        )}
 
         <div className="flex rounded-md border border-gray-300 overflow-hidden ml-2">
           <button
+            onClick={() => setView("mes")}
+            className={`px-3 py-1.5 text-xs font-medium ${view === "mes" ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+          >
+            Mes
+          </button>
+          <button
             onClick={() => setView("grid")}
-            className={`px-3 py-1.5 text-xs font-medium ${view === "grid" ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            className={`px-3 py-1.5 text-xs font-medium border-l border-gray-300 ${view === "grid" ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
           >
             Grilla
           </button>
@@ -182,7 +271,42 @@ export function CalendarView() {
         </div>
       </div>
 
-      {activeProfessionals.length === 0 ? (
+      {view === "mes" ? (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="grid grid-cols-7 bg-gray-50 text-xs text-gray-400 uppercase">
+            {WEEKDAYS.map((d) => (
+              <div key={d} className="px-2 py-2 text-center font-medium">
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {monthCells.map((day, i) => (
+              <button
+                key={i}
+                disabled={!day}
+                onClick={() => day && openDay(day)}
+                className={`min-h-20 border-t border-l border-gray-100 p-2 text-left first:border-l-0 hover:bg-brand-50 transition-colors disabled:hover:bg-transparent disabled:cursor-default ${
+                  day === todayDayNumber ? "bg-brand-50/60" : ""
+                }`}
+              >
+                {day && (
+                  <>
+                    <div className={`text-xs ${day === todayDayNumber ? "font-semibold text-brand-700" : "text-gray-500"}`}>
+                      {day}
+                    </div>
+                    {appointmentCountByDay[day] > 0 && (
+                      <div className="mt-1 inline-block text-[11px] rounded-full bg-brand-100 text-brand-700 px-2 py-0.5">
+                        {appointmentCountByDay[day]} turno{appointmentCountByDay[day] === 1 ? "" : "s"}
+                      </div>
+                    )}
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : activeProfessionals.length === 0 ? (
         <p className="text-sm text-gray-400">
           Todavía no hay profesionales activos — agregá uno en la pestaña "Profesionales".
         </p>
