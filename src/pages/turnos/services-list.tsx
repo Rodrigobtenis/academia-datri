@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createService, listServices, updateService } from "../../lib/api/services";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Dialog } from "../../components/ui/dialog";
-import { Field, TextInput } from "../../components/ui/field";
+import { Field, TextInput, Select } from "../../components/ui/field";
 import { formatMoney } from "../../lib/money";
 import { useAuth } from "../../lib/auth-context";
 import type { Service, ServiceInput } from "../../types/service";
@@ -14,17 +14,29 @@ export function ServicesList() {
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   const [name, setName] = useState("");
   const [duration, setDuration] = useState("60");
   const [price, setPrice] = useState("0");
+  const [category, setCategory] = useState("");
 
   const { data: services } = useQuery({ queryKey: ["services"], queryFn: listServices });
+
+  const categories = useMemo(() => {
+    const set = new Set((services ?? []).map((s) => s.category).filter((c): c is string => Boolean(c)));
+    return Array.from(set).sort();
+  }, [services]);
+
+  const filteredServices = categoryFilter
+    ? (services ?? []).filter((s) => s.category === categoryFilter)
+    : services;
 
   function resetForm() {
     setName("");
     setDuration("60");
     setPrice("0");
+    setCategory("");
   }
 
   const createMutation = useMutation({
@@ -50,13 +62,22 @@ export function ServicesList() {
       name,
       duration_minutes: Number(duration),
       price,
+      category: category || null,
       active: true,
     });
   }
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-56">
+          <option value="">Todas las categorías</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
         {isAdmin && <Button onClick={() => setCreating(true)}>+ Nuevo servicio</Button>}
       </div>
 
@@ -66,6 +87,7 @@ export function ServicesList() {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Servicio</th>
+                <th className="text-left px-4 py-3 font-medium">Categoría</th>
                 <th className="text-right px-4 py-3 font-medium">Duración</th>
                 <th className="text-right px-4 py-3 font-medium">Precio</th>
                 <th className="text-center px-4 py-3 font-medium">Estado</th>
@@ -73,16 +95,17 @@ export function ServicesList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {services?.length === 0 && (
+              {filteredServices?.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                     Todavía no hay servicios cargados.
                   </td>
                 </tr>
               )}
-              {services?.map((s) => (
+              {filteredServices?.map((s) => (
                 <tr key={s.id}>
                   <td className="px-4 py-2 font-medium text-gray-900">{s.name}</td>
+                  <td className="px-4 py-2 text-gray-500">{s.category || "—"}</td>
                   <td className="px-4 py-2 text-right">{s.duration_minutes} min</td>
                   <td className="px-4 py-2 text-right">{formatMoney(s.price)}</td>
                   <td className="px-4 py-2 text-center">
@@ -114,6 +137,9 @@ export function ServicesList() {
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           <Field label="Nombre *">
             <TextInput required value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Categoría">
+            <TextInput value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ej: Cejas" />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Duración (min) *">
@@ -173,10 +199,11 @@ function EditServiceDialog({
   const [name, setName] = useState(service.name);
   const [duration, setDuration] = useState(String(service.duration_minutes));
   const [price, setPrice] = useState(service.price);
+  const [category, setCategory] = useState(service.category ?? "");
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    onSave({ name, duration_minutes: Number(duration), price });
+    onSave({ name, duration_minutes: Number(duration), price, category: category || null });
   }
 
   return (
@@ -184,6 +211,9 @@ function EditServiceDialog({
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Nombre *">
           <TextInput required value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Field label="Categoría">
+          <TextInput value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Ej: Cejas" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Duración (min) *">

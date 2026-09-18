@@ -64,6 +64,16 @@ export function AppointmentForm({
     [startTime, service]
   );
 
+  const servicesByCategory = useMemo(() => {
+    const groups = new Map<string, Service[]>();
+    for (const s of services) {
+      const key = s.category || "Sin categoría";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(s);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [services]);
+
   function reset() {
     setStudent(null);
     setServiceId(services[0]?.id ?? "");
@@ -172,10 +182,14 @@ export function AppointmentForm({
           <div className="grid grid-cols-2 gap-4">
             <Field label="Servicio *">
               <Select value={serviceId} onChange={(e) => handleServiceChange(e.target.value)} required>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.duration_minutes} min)
-                  </option>
+                {servicesByCategory.map(([category, group]) => (
+                  <optgroup key={category} label={category}>
+                    {group.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.duration_minutes} min)
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </Field>

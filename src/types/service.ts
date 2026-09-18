@@ -3,6 +3,7 @@ export interface Service {
   name: string;
   duration_minutes: number;
   price: string;
+  category: string | null;
   active: boolean;
   created_at: string;
 }
