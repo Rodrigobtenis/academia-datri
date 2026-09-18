@@ -9,7 +9,10 @@
 -- en todas las filas.
 
 insert into students (first_name, last_name, dni, phone, email, birth_date, country, status)
-select v.first_name, v.last_name, v.dni, v.phone, v.email, v.birth_date, 'Argentina', 'activa'
+-- Postgres infiere la columna "birth_date" del VALUES como texto cuando la mezcla con NULL
+-- no le alcanza para deducir que es fecha -- se castea explicito para que entre bien en la
+-- columna date de students.
+select v.first_name, v.last_name, v.dni, v.phone, v.email, v.birth_date::date, 'Argentina', 'activa'
 from (values
   ('Marcela Cinthia Gonet', '-', null, '+5491157301649', null, null),
   ('Silvia', '-', null, '+5491160925519', null, null),
