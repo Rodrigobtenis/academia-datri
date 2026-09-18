@@ -71,3 +71,16 @@ export type AppointmentPaymentInput = Pick<
   AppointmentPayment,
   "appointment_id" | "payment_date" | "amount" | "payment_type" | "payment_method" | "reference" | "notes"
 >;
+
+export interface ProfessionalBlock {
+  id: string;
+  professional_id: string;
+  block_date: string;
+  start_time: string;
+  end_time: string;
+  reason: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type ProfessionalBlockInput = Omit<ProfessionalBlock, "id" | "created_at">;

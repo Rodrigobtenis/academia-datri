@@ -3,7 +3,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { GlobalSearch } from "./global-search";
 import {
-  IconHome,
   IconCalendar,
   IconClock,
   IconCap,
@@ -19,9 +18,8 @@ import {
 } from "./icons";
 
 const mainNav = [
-  { to: "/", label: "Dashboard", end: true, icon: IconHome },
+  { to: "/", label: "Turnos", end: true, icon: IconClock },
   { to: "/agenda", label: "Agenda", icon: IconCalendar },
-  { to: "/turnos", label: "Turnos", icon: IconClock },
   { to: "/cursos", label: "Cursos", icon: IconCap },
   { to: "/alumnas", label: "Alumnas", icon: IconUsers },
   { to: "/modelos", label: "Modelos", icon: IconCamera },

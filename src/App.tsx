@@ -6,7 +6,6 @@ import AppLayout from "./components/app-layout";
 import { Toaster } from "./components/toaster";
 import { emitError } from "./lib/toast-bus";
 import LoginPage from "./pages/auth/login";
-import DashboardPage from "./pages/dashboard/dashboard-page";
 import AlumnasList from "./pages/alumnas/alumnas-list";
 import AlumnaDetail from "./pages/alumnas/alumna-detail";
 import CursosList from "./pages/cursos/cursos-list";
@@ -55,9 +54,8 @@ export default function App() {
                 </RequireAuth>
               }
             >
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/" element={<TurnosPage />} />
               <Route path="/agenda" element={<AgendaPage />} />
-              <Route path="/turnos" element={<TurnosPage />} />
               <Route path="/cursos" element={<CursosList />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />
               <Route path="/cursos/:courseTypeId/:editionId" element={<EditionDetail />} />

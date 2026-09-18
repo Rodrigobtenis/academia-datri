@@ -4,6 +4,7 @@ import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
 import { StudentPicker } from "../../components/student-picker";
 import { listProfessionalAppointmentsForDate } from "../../lib/api/appointments";
+import { listProfessionalBlocksForDate } from "../../lib/api/blocks";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../types/payment";
 import type { AppointmentInput } from "../../types/appointment";
 import type { Professional } from "../../types/professional";
@@ -91,18 +92,25 @@ export function AppointmentForm({
   async function checkConflicts(): Promise<boolean> {
     setChecking(true);
     try {
-      const existing = await listProfessionalAppointmentsForDate(professionalId, date);
+      const [existing, blocks] = await Promise.all([
+        listProfessionalAppointmentsForDate(professionalId, date),
+        listProfessionalBlocksForDate(professionalId, date),
+      ]);
       // Normalizamos a "HH:MM": la base devuelve "HH:MM:SS" y comparar strings de distinta
       // longitud como "10:00" vs "10:00:00" da un falso "mayor que" aunque sea la misma hora.
-      const overlapping = existing.filter(
-        (a) => a.start_time.slice(0, 5) < endTime && a.end_time.slice(0, 5) > startTime
-      );
-      if (overlapping.length > 0) {
-        setConflicts(
-          overlapping.map((a) => ({
+      const overlapsRange = (start: string, end: string) => start.slice(0, 5) < endTime && end.slice(0, 5) > startTime;
+      const overlappingAppointments = existing.filter((a) => overlapsRange(a.start_time, a.end_time));
+      const overlappingBlocks = blocks.filter((b) => overlapsRange(b.start_time, b.end_time));
+
+      if (overlappingAppointments.length > 0 || overlappingBlocks.length > 0) {
+        setConflicts([
+          ...overlappingAppointments.map((a) => ({
             label: `${a.students?.last_name ?? "—"}, ${a.students?.first_name ?? ""} (${a.start_time.slice(0, 5)}–${a.end_time.slice(0, 5)})`,
-          }))
-        );
+          })),
+          ...overlappingBlocks.map((b) => ({
+            label: `Horario bloqueado${b.reason ? ` — ${b.reason}` : ""} (${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)})`,
+          })),
+        ]);
         return false;
       }
       setConflicts(null);
