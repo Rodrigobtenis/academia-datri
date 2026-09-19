@@ -21,6 +21,7 @@ import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
 import ModelosList from "./pages/modelos/modelos-list";
 import TurnosPage from "./pages/turnos/turnos-page";
+import ReservarPage from "./pages/public/reservar-page";
 
 // Red de contención global: si CUALQUIER mutación de la app falla y esa pantalla no
 // maneja el error puntualmente, esto igual muestra un toast — así ninguna acción falla
@@ -46,6 +47,7 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reservar" element={<ReservarPage />} />
 
             <Route
               element={
