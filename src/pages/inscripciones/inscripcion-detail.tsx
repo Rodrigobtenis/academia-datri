@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEnrollmentFull, getBalance } from "../../lib/api/enrollments";
+import { getEnrollmentFull, getBalance, updateEnrollment } from "../../lib/api/enrollments";
 import { listPaymentsByEnrollment, submitPayment, voidPayment } from "../../lib/api/payments";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { PaymentForm } from "../pagos/payment-form";
+import { PriceEditForm } from "./price-edit-form";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
-import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS } from "../../types/enrollment";
+import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS, type EnrollmentInput } from "../../types/enrollment";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, type PaymentFormValues } from "../../types/payment";
 import { useAuth } from "../../lib/auth-context";
 import { DocumentsCard } from "../../components/documents-card";
@@ -19,6 +20,7 @@ export default function InscripcionDetail() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const [registering, setRegistering] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
 
@@ -65,6 +67,19 @@ export default function InscripcionDetail() {
     },
   });
 
+  const priceMutation = useMutation({
+    mutationFn: (values: Partial<EnrollmentInput>) =>
+      updateEnrollment(enrollmentId!, {
+        ...values,
+        discount_authorized_by: values.discount_type ? (profile?.id ?? null) : null,
+      }),
+    onSuccess: () => {
+      invalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["enrollment-full", enrollmentId] });
+      setEditingPrice(false);
+    },
+  });
+
   if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
   if (!enrollment) return <div className="p-8 text-gray-400 text-sm">No se encontró la inscripción.</div>;
 
@@ -99,7 +114,12 @@ export default function InscripcionDetail() {
       </div>
 
       <section className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Precio</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-gray-900">Precio</h2>
+          <Button variant="ghost" onClick={() => setEditingPrice(true)}>
+            Editar
+          </Button>
+        </div>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">Precio lista</span>
@@ -185,6 +205,15 @@ export default function InscripcionDetail() {
       <div className="mt-6">
         <DocumentsCard enrollmentId={enrollmentId} />
       </div>
+
+      <PriceEditForm
+        open={editingPrice}
+        onClose={() => setEditingPrice(false)}
+        onSubmit={(values) => priceMutation.mutate(values)}
+        enrollment={enrollment}
+        paidAmount={parseFloat(balance?.paid_amount ?? "0")}
+        saving={priceMutation.isPending}
+      />
 
       <PaymentForm
         open={registering}

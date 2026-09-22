@@ -146,6 +146,11 @@ export function PaymentForm({
                     <strong className="text-emerald-600">{formatMoney(actualToCollect)}</strong>.
                   </p>
                 )}
+                <p className="text-xs text-gray-400">
+                  Este % se calcula sobre este pago puntual, no sobre el precio total del curso. Si el
+                  descuento en efectivo es sobre TODO el curso (por ejemplo, ya se cobró una seña sin
+                  descuento), mejor editar el precio de la inscripción en vez de usar esto acá.
+                </p>
               </div>
             )}
           </div>
