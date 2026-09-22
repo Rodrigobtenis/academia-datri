@@ -1,5 +1,5 @@
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./lib/auth-context";
 import { RequireAuth, RequireAdmin } from "./components/require-auth";
 import AppLayout from "./components/app-layout";
@@ -20,8 +20,8 @@ import GastosPage from "./pages/gastos/gastos-page";
 import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
 import ModelosList from "./pages/modelos/modelos-list";
-import TurnosPage from "./pages/turnos/turnos-page";
-import ReservarPage from "./pages/public/reservar-page";
+// Turnos/autoagenda quedan en pausa (código intacto en src/pages/turnos y
+// src/pages/public/reservar-page.tsx) pero fuera del front hasta que se retomen.
 
 // Red de contención global: si CUALQUIER mutación de la app falla y esa pantalla no
 // maneja el error puntualmente, esto igual muestra un toast — así ninguna acción falla
@@ -47,7 +47,6 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/reservar" element={<ReservarPage />} />
 
             <Route
               element={
@@ -56,7 +55,7 @@ export default function App() {
                 </RequireAuth>
               }
             >
-              <Route path="/" element={<TurnosPage />} />
+              <Route path="/" element={<Navigate to="/cursos" replace />} />
               <Route path="/agenda" element={<AgendaPage />} />
               <Route path="/cursos" element={<CursosList />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />

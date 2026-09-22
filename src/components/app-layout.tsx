@@ -4,7 +4,6 @@ import { useAuth } from "../lib/auth-context";
 import { GlobalSearch } from "./global-search";
 import {
   IconCalendar,
-  IconClock,
   IconCap,
   IconUsers,
   IconCamera,
@@ -18,8 +17,7 @@ import {
 } from "./icons";
 
 const mainNav = [
-  { to: "/", label: "Turnos", end: true, icon: IconClock },
-  { to: "/agenda", label: "Agenda", icon: IconCalendar },
+  { to: "/agenda", label: "Agenda", end: true, icon: IconCalendar },
   { to: "/cursos", label: "Cursos", icon: IconCap },
   { to: "/alumnas", label: "Alumnas", icon: IconUsers },
   { to: "/modelos", label: "Modelos", icon: IconCamera },
