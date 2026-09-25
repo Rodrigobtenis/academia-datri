@@ -7,6 +7,11 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { PaymentForm } from "../pagos/payment-form";
 import { PriceEditForm } from "./price-edit-form";
+import {
+  getEnrollmentDeletionSummary,
+  forceDeleteEnrollmentCascade,
+  type EnrollmentDeletionSummary,
+} from "../../lib/api/enrollment-purge";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { ENROLLMENT_STATUS_COLORS, ENROLLMENT_STATUS_LABELS, type EnrollmentInput } from "../../types/enrollment";
@@ -23,6 +28,10 @@ export default function InscripcionDetail() {
   const [editingPrice, setEditingPrice] = useState(false);
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleteSummary, setDeleteSummary] = useState<EnrollmentDeletionSummary | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: enrollment, isLoading } = useQuery({
     queryKey: ["enrollment-full", enrollmentId],
@@ -80,6 +89,42 @@ export default function InscripcionDetail() {
     },
   });
 
+  const summaryMutation = useMutation({
+    mutationFn: () => getEnrollmentDeletionSummary(enrollmentId!),
+    onSuccess: (summary) => {
+      setDeleteSummary(summary);
+      setDeleteStep(1);
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
+  const forceDeleteMutation = useMutation({
+    mutationFn: () => forceDeleteEnrollmentCascade(enrollmentId!),
+    onSuccess: () => {
+      if (enrollment?.course_editions) {
+        navigate(`/cursos/${enrollment.course_editions.course_type_id}/${enrollment.course_editions.id}`);
+      } else {
+        navigate("/cursos");
+      }
+    },
+    onError: (err: Error) => setDeleteError(err.message),
+  });
+
+  function openDeleteFlow() {
+    setDeleteError(null);
+    setDeleteSummary(null);
+    setDeleteStep(1);
+    setDeleting(true);
+    summaryMutation.mutate();
+  }
+
+  function closeDeleteFlow() {
+    setDeleting(false);
+    setDeleteStep(1);
+    setDeleteSummary(null);
+    setDeleteError(null);
+  }
+
   if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
   if (!enrollment) return <div className="p-8 text-gray-400 text-sm">No se encontró la inscripción.</div>;
 
@@ -108,9 +153,14 @@ export default function InscripcionDetail() {
               (enrollment.course_editions && formatDateAR(enrollment.course_editions.start_date))}
           </p>
         </div>
-        <Badge color={ENROLLMENT_STATUS_COLORS[enrollment.status]}>
-          {ENROLLMENT_STATUS_LABELS[enrollment.status]}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge color={ENROLLMENT_STATUS_COLORS[enrollment.status]}>
+            {ENROLLMENT_STATUS_LABELS[enrollment.status]}
+          </Badge>
+          <Button variant="danger" onClick={openDeleteFlow}>
+            Eliminar inscripción
+          </Button>
+        </div>
       </div>
 
       <section className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -249,6 +299,77 @@ export default function InscripcionDetail() {
                 onClick={() => voidMutation.mutate({ id: voidingId, reason: voidReason })}
               >
                 Anular pago
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && deleteStep === 1 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl p-6">
+            <h3 className="text-base font-semibold text-red-700 mb-2">Eliminar esta inscripción</h3>
+            {summaryMutation.isPending && <p className="text-sm text-gray-400">Revisando qué se va a borrar...</p>}
+            {deleteSummary && (
+              <>
+                <p className="text-sm text-gray-600 mb-3">
+                  Se va a borrar para siempre la inscripción de{" "}
+                  <span className="font-medium text-gray-800">
+                    {enrollment.students?.last_name}, {enrollment.students?.first_name}
+                  </span>{" "}
+                  en este curso, junto con:
+                </p>
+                <ul className="text-sm text-gray-700 list-disc pl-5 mb-3 space-y-0.5">
+                  <li>
+                    {deleteSummary.paymentCount} pago{deleteSummary.paymentCount === 1 ? "" : "s"}
+                    {deleteSummary.totalCollected > 0 && (
+                      <>
+                        , por un total de <span className="font-semibold">{formatMoney(deleteSummary.totalCollected)}</span>
+                      </>
+                    )}
+                  </li>
+                  {deleteSummary.documentCount > 0 && <li>{deleteSummary.documentCount} documentos adjuntos</li>}
+                </ul>
+                <p className="text-sm text-red-600 font-medium mb-4">
+                  Es irreversible. No queda ningún registro de que esta clienta estuvo en este curso, y ese dinero
+                  deja de sumar para siempre en Comisiones, Objetivos y Gestión.
+                </p>
+              </>
+            )}
+            {deleteError && <p className="text-sm text-red-600 mb-4">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeDeleteFlow}>
+                Cancelar
+              </Button>
+              <Button variant="danger" disabled={!deleteSummary} onClick={() => setDeleteStep(2)}>
+                Continuar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleting && deleteStep === 2 && deleteSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white shadow-xl p-6">
+            <h3 className="text-base font-semibold text-red-700 mb-2">Última confirmación</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Vas a eliminar definitivamente esta inscripción y sus {deleteSummary.paymentCount} pago
+              {deleteSummary.paymentCount === 1 ? "" : "s"}
+              {deleteSummary.totalCollected > 0 ? ` (${formatMoney(deleteSummary.totalCollected)})` : ""}. No hay
+              forma de deshacer esto.
+            </p>
+            {deleteError && <p className="text-sm text-red-600 mb-4">{deleteError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeDeleteFlow}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={forceDeleteMutation.isPending}
+                onClick={() => forceDeleteMutation.mutate()}
+              >
+                {forceDeleteMutation.isPending ? "Eliminando..." : "Sí, eliminar para siempre"}
               </Button>
             </div>
           </div>
