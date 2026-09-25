@@ -12,7 +12,7 @@ import {
 import { listProfitability } from "../../lib/api/profitability";
 import { listGoalProgressHistory } from "../../lib/api/goals";
 import { GoalProgressCard } from "../../components/goal-progress-card";
-import { TextInput } from "../../components/ui/field";
+import { TextInput, Select } from "../../components/ui/field";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { MONTHS } from "../../lib/months";
@@ -30,8 +30,9 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 
 export default function GestionPage() {
   const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
   const prevDate = new Date(year, month - 2, 1);
   const prevMonth = prevDate.getMonth() + 1;
   const prevYear = prevDate.getFullYear();
@@ -92,7 +93,25 @@ export default function GestionPage() {
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Cobranza</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 className="text-sm font-semibold text-gray-900">Cobranza — {MONTHS[month - 1]} {year}</h2>
+          <div className="flex gap-2">
+            <Select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="w-40">
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </Select>
+            <Select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-28">
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Stat label="Cobrado este mes" value={formatMoney(currentAmount)} />
           <Stat label="Cobrado mes anterior" value={formatMoney(previousAmount)} />
@@ -102,7 +121,7 @@ export default function GestionPage() {
           />
           <Stat label="Cobrado del año" value={formatMoney(yearTotal)} />
           <Stat label="Vendido este mes" value={formatMoney(soldMonth ?? 0)} />
-          <Stat label="Pendiente de cobro" value={formatMoney(pending ?? 0)} />
+          <Stat label="Pendiente de cobro" value={formatMoney(pending ?? 0)} sub="Saldo total a hoy, no depende del mes elegido" />
           <Stat label="Total de señas (mes)" value={formatMoney(breakdown?.totalSenas ?? 0)} />
           <Stat
             label="Reintegros (mes)"
