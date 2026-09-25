@@ -154,3 +154,11 @@ export function IconBell({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconBolt({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={base} className={className}>
+      <path d="M13 3 5 13.5h5.5L11 21l8-10.5h-5.5L13 3Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

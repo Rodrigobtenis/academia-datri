@@ -7,10 +7,11 @@ import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea } from "../../components/ui/field";
 import { useAuth } from "../../lib/auth-context";
 import { AlertsPanel } from "../../components/alerts-panel";
-import { IconCalendar, IconMonitor } from "../../components/icons";
+import { IconCalendar, IconMonitor, IconBolt } from "../../components/icons";
 import { EDITION_MODALITY_LABELS, type EditionModality } from "../../types/course";
 
 function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void }) {
+  const navigate = useNavigate();
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -35,6 +36,16 @@ function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void })
           <p className="text-sm text-gray-500 mt-1">Sin fecha fija — cuentan para el mes en curso.</p>
         </button>
       </div>
+      <button
+        onClick={() => navigate("/cursos/vigentes")}
+        className="mt-4 w-full max-w-2xl text-left bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3 hover:border-brand-300 hover:shadow-sm transition"
+      >
+        <IconBolt className="w-6 h-6 text-emerald-500 shrink-0" />
+        <div>
+          <div className="font-semibold text-gray-900">Cursos vigentes</div>
+          <p className="text-sm text-gray-500">Ir directo a las ediciones abiertas para inscripción ahora.</p>
+        </div>
+      </button>
     </div>
   );
 }

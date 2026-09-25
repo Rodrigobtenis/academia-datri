@@ -9,6 +9,7 @@ import LoginPage from "./pages/auth/login";
 import AlumnasList from "./pages/alumnas/alumnas-list";
 import AlumnaDetail from "./pages/alumnas/alumna-detail";
 import CursosList from "./pages/cursos/cursos-list";
+import CursosVigentes from "./pages/cursos/cursos-vigentes";
 import ModalidadDetail from "./pages/cursos/modalidad-detail";
 import EditionDetail from "./pages/cursos/edition-detail";
 import InscripcionDetail from "./pages/inscripciones/inscripcion-detail";
@@ -58,6 +59,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/cursos" replace />} />
               <Route path="/agenda" element={<AgendaPage />} />
               <Route path="/cursos" element={<CursosList />} />
+              <Route path="/cursos/vigentes" element={<CursosVigentes />} />
               <Route path="/cursos/:courseTypeId" element={<ModalidadDetail />} />
               <Route path="/cursos/:courseTypeId/:editionId" element={<EditionDetail />} />
               <Route

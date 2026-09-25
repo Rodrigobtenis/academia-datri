@@ -48,6 +48,18 @@ export async function listEditionsInRange(start: string, end: string) {
   return data as (CourseEdition & { course_types: { id: string; name: string } | null })[];
 }
 
+// Para el atajo "Cursos vigentes": todas las ediciones abiertas para inscripción, de
+// cualquier modalidad, para entrar directo sin pasar por Presencial/Online → Modalidad.
+export async function listOpenEditions() {
+  const { data, error } = await supabase
+    .from("course_editions")
+    .select("*, course_types(id, name)")
+    .eq("status", "abierto")
+    .order("start_date", { ascending: true });
+  if (error) throw error;
+  return data as (CourseEdition & { course_types: { id: string; name: string } | null })[];
+}
+
 export async function getEdition(id: string) {
   const { data, error } = await supabase.from("course_editions").select("*").eq("id", id).single();
   if (error) throw error;
