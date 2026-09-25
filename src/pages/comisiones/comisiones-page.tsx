@@ -8,16 +8,90 @@ import { formatDateAR } from "../../lib/date-ar";
 import { exportToExcel } from "../../lib/excel-export";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS } from "../../types/payment";
 import { MONTHS } from "../../lib/months";
+import type { CommissionPaymentRow } from "../../types/commission";
+
+type SortKey = "fecha" | "alumna" | "curso" | "edicion" | "tipo" | "metodo" | "monto" | "porcentaje" | "comision";
+
+const SORT_ACCESSORS: Record<SortKey, (r: CommissionPaymentRow) => string | number> = {
+  fecha: (r) => r.payment_date,
+  alumna: (r) => (r.student_name ?? "").toLowerCase(),
+  curso: (r) => (r.course_name ?? "").toLowerCase(),
+  edicion: (r) => (r.edition_label ?? "").toLowerCase(),
+  tipo: (r) => PAYMENT_TYPE_LABELS[r.payment_type],
+  metodo: (r) => PAYMENT_METHOD_LABELS[r.payment_method],
+  monto: (r) => parseFloat(r.amount),
+  porcentaje: (r) => parseFloat(r.rate_percent || "0"),
+  comision: (r) => parseFloat(r.commission_amount),
+};
+
+function SortableHeader({
+  label,
+  sortKey,
+  active,
+  dir,
+  onClick,
+  align = "left",
+}: {
+  label: string;
+  sortKey: SortKey;
+  active: SortKey | null;
+  dir: "asc" | "desc";
+  onClick: (key: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const isActive = active === sortKey;
+  return (
+    <th className={`px-4 py-3 font-medium ${align === "right" ? "text-right" : "text-left"}`}>
+      <button
+        type="button"
+        onClick={() => onClick(sortKey)}
+        className={`inline-flex items-center gap-1 hover:text-gray-700 ${isActive ? "text-gray-700" : ""}`}
+      >
+        {label}
+        <span className={`text-[10px] ${isActive ? "" : "opacity-30"}`}>
+          {isActive ? (dir === "asc" ? "▲" : "▼") : "▲"}
+        </span>
+      </button>
+    </th>
+  );
+}
 
 export default function ComisionesPage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const { data: rows, isLoading } = useQuery({
     queryKey: ["commissions", month, year],
     queryFn: () => getMonthlyCommissionDetail(month, year),
   });
+
+  const sortedRows = useMemo(() => {
+    if (!rows || !sortKey) return rows;
+    const accessor = SORT_ACCESSORS[sortKey];
+    const sorted = [...rows].sort((a, b) => {
+      const av = accessor(a);
+      const bv = accessor(b);
+      if (av < bv) return -1;
+      if (av > bv) return 1;
+      return 0;
+    });
+    if (sortDir === "desc") sorted.reverse();
+    return sorted;
+  }, [rows, sortKey, sortDir]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+    }
+  }
 
   const totals = useMemo(() => {
     const totalCobrado = sumMoney((rows ?? []).map((r) => r.amount));
@@ -102,15 +176,36 @@ export default function ComisionesPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Fecha</th>
-              <th className="text-left px-4 py-3 font-medium">Alumna</th>
-              <th className="text-left px-4 py-3 font-medium">Curso</th>
-              <th className="text-left px-4 py-3 font-medium">Edición</th>
-              <th className="text-left px-4 py-3 font-medium">Tipo</th>
-              <th className="text-left px-4 py-3 font-medium">Método</th>
-              <th className="text-right px-4 py-3 font-medium">Monto</th>
-              <th className="text-right px-4 py-3 font-medium">%</th>
-              <th className="text-right px-4 py-3 font-medium">Comisión</th>
+              <SortableHeader label="Fecha" sortKey="fecha" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Alumna" sortKey="alumna" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Curso" sortKey="curso" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Edición" sortKey="edicion" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Tipo" sortKey="tipo" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Método" sortKey="metodo" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader
+                label="Monto"
+                sortKey="monto"
+                active={sortKey}
+                dir={sortDir}
+                onClick={toggleSort}
+                align="right"
+              />
+              <SortableHeader
+                label="%"
+                sortKey="porcentaje"
+                active={sortKey}
+                dir={sortDir}
+                onClick={toggleSort}
+                align="right"
+              />
+              <SortableHeader
+                label="Comisión"
+                sortKey="comision"
+                active={sortKey}
+                dir={sortDir}
+                onClick={toggleSort}
+                align="right"
+              />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -128,7 +223,7 @@ export default function ComisionesPage() {
                 </td>
               </tr>
             )}
-            {rows?.map((r) => (
+            {sortedRows?.map((r) => (
               <tr key={r.payment_id}>
                 <td className="px-4 py-2">{formatDateAR(r.payment_date)}</td>
                 <td className="px-4 py-2">{r.student_name}</td>
