@@ -9,7 +9,7 @@ import { useAuth } from "../../lib/auth-context";
 import type { ModelInput, ModelWithServices } from "../../types/model";
 
 export default function ModelosList() {
-  const { profile, isAdmin } = useAuth();
+  const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
@@ -146,14 +146,19 @@ export default function ModelosList() {
                     )}
                   </td>
                   <td className="px-4 py-2 text-right">
-                    {isAdmin && (
-                      <button
-                        className="text-xs text-red-500 hover:text-red-700"
-                        onClick={() => deleteMutation.mutate(m)}
-                      >
-                        Eliminar
-                      </button>
-                    )}
+                    <button className="text-xs text-gray-500 hover:text-gray-800 mr-3" onClick={() => setEditing(m)}>
+                      Editar
+                    </button>
+                    <button
+                      className="text-xs text-red-500 hover:text-red-700"
+                      onClick={() => {
+                        if (window.confirm(`¿Eliminar a ${m.last_name}, ${m.first_name}? No se puede deshacer.`)) {
+                          deleteMutation.mutate(m);
+                        }
+                      }}
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}
