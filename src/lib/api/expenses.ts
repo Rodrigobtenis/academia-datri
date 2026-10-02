@@ -38,6 +38,12 @@ export async function createExpense(input: ExpenseInput) {
   return data as Expense;
 }
 
+export async function updateExpense(id: string, input: Partial<ExpenseInput>) {
+  const { data, error } = await supabase.from("expenses").update(input).eq("id", id).select().single();
+  if (error) throw error;
+  return data as Expense;
+}
+
 export async function deleteExpense(id: string) {
   const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) throw error;

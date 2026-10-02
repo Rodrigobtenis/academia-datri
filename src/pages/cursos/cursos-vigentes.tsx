@@ -4,7 +4,7 @@ import { listOpenEditions } from "../../lib/api/courses";
 import { Badge } from "../../components/ui/badge";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
-import { EDITION_MODALITY_COLORS, EDITION_MODALITY_LABELS } from "../../types/course";
+import { EDITION_MODALITY_COLORS, EDITION_MODALITY_LABELS, defaultEditionName } from "../../types/course";
 
 export default function CursosVigentes() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function CursosVigentes() {
   return (
     <div className="p-8">
       <button onClick={() => navigate("/cursos")} className="text-sm text-gray-400 hover:text-gray-600 mb-4">
-        ← Presencial / Online
+        ← Cursos
       </button>
 
       <div className="mb-6">
@@ -43,7 +43,7 @@ export default function CursosVigentes() {
                 <Badge color={EDITION_MODALITY_COLORS[ed.modality]}>{EDITION_MODALITY_LABELS[ed.modality]}</Badge>
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                {ed.name || (ed.modality === "online" ? "Edición online" : `Edición del ${formatDateAR(ed.start_date)}`)}
+                {ed.name || defaultEditionName(ed, formatDateAR(ed.start_date))}
                 {ed.modality !== "online" ? ` · ${formatDateAR(ed.start_date)}` : ""}
                 {ed.location ? ` · ${ed.location}` : ""}
                 {" · "}

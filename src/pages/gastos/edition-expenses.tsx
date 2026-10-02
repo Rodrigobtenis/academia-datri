@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createExpense, deleteExpense, listExpensesByEdition } from "../../lib/api/expenses";
+import { createExpense, deleteExpense, listExpensesByEdition, updateExpense } from "../../lib/api/expenses";
 import { Button } from "../../components/ui/button";
 import { ExpenseForm } from "./expense-form";
 import { formatMoney, sumMoney } from "../../lib/money";
-import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
+import { EXPENSE_CATEGORY_LABELS, type Expense, type ExpenseInput } from "../../types/expense";
 
 export function EditionExpenses({ editionId }: { editionId: string }) {
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Expense | null>(null);
   const queryClient = useQueryClient();
 
   const { data: expenses } = useQuery({
@@ -20,6 +21,14 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["edition-expenses", editionId] });
       setCreating(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ExpenseInput }) => updateExpense(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["edition-expenses", editionId] });
+      setEditing(null);
     },
   });
 
@@ -51,9 +60,14 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
               </span>
               <div className="flex items-center gap-3">
                 <span className="font-medium">{formatMoney(e.amount)}</span>
+                <button className="text-xs text-gray-500 hover:text-gray-800" onClick={() => setEditing(e)}>
+                  Editar
+                </button>
                 <button
                   className="text-xs text-red-500 hover:text-red-700"
-                  onClick={() => deleteMutation.mutate(e.id)}
+                  onClick={() => {
+                    if (window.confirm("¿Eliminar este gasto?")) deleteMutation.mutate(e.id);
+                  }}
                 >
                   Eliminar
                 </button>
@@ -74,6 +88,18 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
         defaultEditionId={editionId}
         saving={createMutation.isPending}
       />
+
+      {editing && (
+        <ExpenseForm
+          key={editing.id}
+          open
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={(values) => updateMutation.mutate({ id: editing.id, input: values })}
+          defaultEditionId={editionId}
+          saving={updateMutation.isPending}
+        />
+      )}
     </section>
   );
 }

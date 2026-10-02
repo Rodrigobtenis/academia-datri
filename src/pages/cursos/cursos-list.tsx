@@ -7,7 +7,7 @@ import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea } from "../../components/ui/field";
 import { useAuth } from "../../lib/auth-context";
 import { AlertsPanel } from "../../components/alerts-panel";
-import { IconCalendar, IconMonitor, IconBolt } from "../../components/icons";
+import { IconCalendar, IconMonitor, IconBolt, IconCap } from "../../components/icons";
 import { EDITION_MODALITY_LABELS, type EditionModality } from "../../types/course";
 
 function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void }) {
@@ -16,9 +16,9 @@ function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void })
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-lg font-semibold text-gray-900">Cursos</h1>
-        <p className="text-sm text-gray-500">¿Presencial u online? Entrá a la que necesites.</p>
+        <p className="text-sm text-gray-500">¿Presencial, online o personalizado? Entrá a la que necesites.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
         <button
           onClick={() => onPick("presencial")}
           className="text-left bg-white rounded-xl border border-gray-200 p-8 hover:border-brand-300 hover:shadow-sm transition"
@@ -35,10 +35,18 @@ function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void })
           <div className="font-semibold text-gray-900 text-lg">Online</div>
           <p className="text-sm text-gray-500 mt-1">Sin fecha fija — cuentan para el mes en curso.</p>
         </button>
+        <button
+          onClick={() => onPick("personalizado")}
+          className="text-left bg-white rounded-xl border border-gray-200 p-8 hover:border-brand-300 hover:shadow-sm transition"
+        >
+          <IconCap className="w-8 h-8 text-brand-500 mb-3" />
+          <div className="font-semibold text-gray-900 text-lg">Personalizado</div>
+          <p className="text-sm text-gray-500 mt-1">A medida: elegís el curso, el monto y la fecha. Se ven en la Agenda.</p>
+        </button>
       </div>
       <button
         onClick={() => navigate("/cursos/vigentes")}
-        className="mt-4 w-full max-w-2xl text-left bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3 hover:border-brand-300 hover:shadow-sm transition"
+        className="mt-4 w-full max-w-4xl text-left bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-3 hover:border-brand-300 hover:shadow-sm transition"
       >
         <IconBolt className="w-6 h-6 text-emerald-500 shrink-0" />
         <div>
@@ -91,7 +99,7 @@ export default function CursosList() {
         onClick={() => setSearchParams({})}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
       >
-        ← Presencial / Online
+        ← Presencial / Online / Personalizado
       </button>
 
       <div className="flex items-center justify-between mb-6">
@@ -100,7 +108,7 @@ export default function CursosList() {
             Cursos — Modalidades <span className="text-gray-400 font-normal">· {EDITION_MODALITY_LABELS[tipo]}</span>
           </h1>
           <p className="text-sm text-gray-500">
-            Entrá a una modalidad para ver y crear sus ediciones {tipo === "online" ? "online" : "presenciales"}.
+            Entrá a una modalidad para ver y crear sus ediciones {tipo === "online" ? "online" : tipo === "personalizado" ? "personalizadas" : "presenciales"}.
           </p>
         </div>
         {isAdmin && <Button onClick={() => setCreating(true)}>+ Nueva modalidad</Button>}

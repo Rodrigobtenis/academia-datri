@@ -18,6 +18,15 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 // distinto.
 const ONLINE_MAX_STUDENTS = 999;
 
+// Un curso personalizado es para una alumna puntual: arranca con un solo cupo.
+const PERSONALIZADO_MAX_STUDENTS = 1;
+
+function defaultMaxStudents(modality: EditionModality) {
+  if (modality === "online") return ONLINE_MAX_STUDENTS;
+  if (modality === "personalizado") return PERSONALIZADO_MAX_STUDENTS;
+  return 10;
+}
+
 function emptyForm(courseTypeId: string, defaultModality: EditionModality): CourseEditionInput {
   return {
     course_type_id: courseTypeId,
@@ -28,7 +37,7 @@ function emptyForm(courseTypeId: string, defaultModality: EditionModality): Cour
     end_time: null,
     location: "",
     teacher: "",
-    max_students: defaultModality === "online" ? ONLINE_MAX_STUDENTS : 10,
+    max_students: defaultMaxStudents(defaultModality),
     list_price: "0",
     promo_price: null,
     status: "borrador",
@@ -76,11 +85,9 @@ export function EditionForm({
       modality,
       start_date: modality === "online" ? todayISO() : f.start_date === todayISO() ? "" : f.start_date,
       max_students:
-        modality === "online"
-          ? ONLINE_MAX_STUDENTS
-          : f.max_students === ONLINE_MAX_STUDENTS
-            ? 10
-            : f.max_students,
+        modality === "online" || f.max_students === ONLINE_MAX_STUDENTS || f.max_students === PERSONALIZADO_MAX_STUDENTS
+          ? defaultMaxStudents(modality)
+          : f.max_students,
     }));
   }
 
@@ -105,7 +112,7 @@ export function EditionForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Nombre (opcional)">
           <TextInput
-            placeholder="Ej: Edición Septiembre 2026"
+            placeholder={form.modality === "personalizado" ? "Ej: Personalizado María Pérez" : "Ej: Edición Septiembre 2026"}
             value={form.name ?? ""}
             onChange={(e) => update("name", e.target.value)}
           />

@@ -1,22 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createExpense, deleteExpense, listExpenses } from "../../lib/api/expenses";
+import { createExpense, deleteExpense, listExpenses, updateExpense } from "../../lib/api/expenses";
 import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/field";
 import { ExpenseForm } from "./expense-form";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { exportToExcel } from "../../lib/excel-export";
-import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
+import { EXPENSE_CATEGORY_LABELS, type Expense, type ExpenseInput } from "../../types/expense";
 import { MONTHS } from "../../lib/months";
-import { useAuth } from "../../lib/auth-context";
 
 export default function GastosPage() {
   const now = new Date();
-  const { isAdmin } = useAuth();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Expense | null>(null);
   const queryClient = useQueryClient();
 
   const { data: expenses, isLoading } = useQuery({
@@ -29,6 +28,14 @@ export default function GastosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       setCreating(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ExpenseInput }) => updateExpense(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      setEditing(null);
     },
   });
 
@@ -66,15 +73,13 @@ export default function GastosPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">Gastos</h1>
-          <p className="text-sm text-gray-500">
-            {isAdmin ? "Registrá y consultá los gastos del negocio." : "Consulta de gastos del negocio."}
-          </p>
+          <p className="text-sm text-gray-500">Registrá y consultá los gastos del negocio.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handleExport} disabled={!expenses || expenses.length === 0}>
             Exportar Excel
           </Button>
-          {isAdmin && <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>}
+          <Button onClick={() => setCreating(true)}>+ Registrar gasto</Button>
         </div>
       </div>
 
@@ -110,20 +115,20 @@ export default function GastosPage() {
               <th className="text-left px-4 py-3 font-medium">Descripción</th>
               <th className="text-left px-4 py-3 font-medium">Edición</th>
               <th className="text-right px-4 py-3 font-medium">Monto</th>
-              {isAdmin && <th />}
+              <th />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={isAdmin ? 6 : 5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   Cargando...
                 </td>
               </tr>
             )}
             {!isLoading && expenses?.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 6 : 5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   Sin gastos este mes.
                 </td>
               </tr>
@@ -137,16 +142,19 @@ export default function GastosPage() {
                   {e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General")}
                 </td>
                 <td className="px-4 py-2 text-right font-medium">{formatMoney(e.amount)}</td>
-                {isAdmin && (
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      className="text-xs text-red-500 hover:text-red-700"
-                      onClick={() => deleteMutation.mutate(e.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                )}
+                <td className="px-4 py-2 text-right whitespace-nowrap">
+                  <button className="text-xs text-gray-500 hover:text-gray-800 mr-3" onClick={() => setEditing(e)}>
+                    Editar
+                  </button>
+                  <button
+                    className="text-xs text-red-500 hover:text-red-700"
+                    onClick={() => {
+                      if (window.confirm("¿Eliminar este gasto?")) deleteMutation.mutate(e.id);
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -160,6 +168,17 @@ export default function GastosPage() {
         onSubmit={(values) => createMutation.mutate(values)}
         saving={createMutation.isPending}
       />
+
+      {editing && (
+        <ExpenseForm
+          key={editing.id}
+          open
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSubmit={(values) => updateMutation.mutate({ id: editing.id, input: values })}
+          saving={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 }

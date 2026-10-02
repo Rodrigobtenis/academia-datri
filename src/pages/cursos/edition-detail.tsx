@@ -20,9 +20,9 @@ import {
   EDITION_MODALITY_LABELS,
   EDITION_STATUS_COLORS,
   EDITION_STATUS_LABELS,
+  defaultEditionName,
   type CourseEditionInput,
 } from "../../types/course";
-import { useAuth } from "../../lib/auth-context";
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
@@ -37,7 +37,6 @@ export default function EditionDetail() {
   const { courseTypeId, editionId } = useParams<{ courseTypeId: string; editionId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const tipoQuery = searchParams.get("tipo") ? `?tipo=${searchParams.get("tipo")}` : "";
   const [editing, setEditing] = useState(false);
@@ -132,7 +131,7 @@ export default function EditionDetail() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-gray-900">
               {edition.name ||
-                (edition.modality === "online" ? "Edición online" : `Edición del ${formatDateAR(edition.start_date)}`)}
+                defaultEditionName(edition, formatDateAR(edition.start_date))}
             </h1>
             <Badge color={EDITION_STATUS_COLORS[edition.status]}>
               {EDITION_STATUS_LABELS[edition.status]}
@@ -249,7 +248,7 @@ export default function EditionDetail() {
             </section>
           )}
 
-          {isAdmin && <EditionExpenses editionId={edition.id} />}
+          <EditionExpenses editionId={edition.id} />
         </div>
       </div>
 

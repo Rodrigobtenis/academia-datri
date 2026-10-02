@@ -17,6 +17,7 @@ import {
   EDITION_MODALITY_LABELS,
   EDITION_STATUS_COLORS,
   EDITION_STATUS_LABELS,
+  defaultEditionName,
   type CourseEdition,
   type CourseEditionInput,
   type EditionModality,
@@ -93,7 +94,7 @@ export default function ModalidadDetail() {
       {!isLoading && editions?.length === 0 && (
         <p className="text-sm text-gray-400">
           {tipo
-            ? `Todavía no hay ediciones ${tipo === "online" ? "online" : "presenciales"} para esta modalidad.`
+            ? `Todavía no hay ediciones ${tipo === "online" ? "online" : tipo === "personalizado" ? "personalizadas" : "presenciales"} para esta modalidad.`
             : "Todavía no hay ediciones para esta modalidad."}
         </p>
       )}
@@ -110,7 +111,7 @@ export default function ModalidadDetail() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-900">
-                    {ed.name || (ed.modality === "online" ? "Edición online" : `Edición del ${formatDateAR(ed.start_date)}`)}
+                    {ed.name || defaultEditionName(ed, formatDateAR(ed.start_date))}
                   </span>
                   <Badge color={EDITION_STATUS_COLORS[ed.status]}>
                     {EDITION_STATUS_LABELS[ed.status]}

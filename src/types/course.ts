@@ -14,7 +14,7 @@ export type EditionStatus =
   | "finalizado"
   | "cancelado";
 
-export type EditionModality = "presencial" | "online";
+export type EditionModality = "presencial" | "online" | "personalizado";
 
 export interface CourseEdition {
   id: string;
@@ -72,9 +72,18 @@ export const EDITION_STATUS_COLORS: Record<EditionStatus, "gray" | "green" | "bl
 export const EDITION_MODALITY_LABELS: Record<EditionModality, string> = {
   presencial: "Presencial",
   online: "Online",
+  personalizado: "Personalizado",
 };
 
-export const EDITION_MODALITY_COLORS: Record<EditionModality, "blue" | "brand"> = {
+export const EDITION_MODALITY_COLORS: Record<EditionModality, "blue" | "brand" | "amber"> = {
   presencial: "blue",
   online: "brand",
+  personalizado: "amber",
 };
+
+// Nombre por defecto cuando la edición no tiene uno cargado a mano.
+export function defaultEditionName(ed: { modality: EditionModality }, formattedDate: string) {
+  if (ed.modality === "online") return "Edición online";
+  if (ed.modality === "personalizado") return `Personalizado del ${formattedDate}`;
+  return `Edición del ${formattedDate}`;
+}

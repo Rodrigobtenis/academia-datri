@@ -5,7 +5,7 @@ import { Field, TextInput, TextArea, Select } from "../../components/ui/field";
 import { Button } from "../../components/ui/button";
 import { listCourseTypes } from "../../lib/api/courses";
 import { supabase } from "../../lib/supabase";
-import { EXPENSE_CATEGORY_LABELS, type ExpenseInput } from "../../types/expense";
+import { EXPENSE_CATEGORY_LABELS, type Expense, type ExpenseInput } from "../../types/expense";
 import { formatDateAR } from "../../lib/date-ar";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -15,20 +15,22 @@ export function ExpenseForm({
   onClose,
   onSubmit,
   defaultEditionId,
+  initial,
   saving,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: ExpenseInput) => void;
   defaultEditionId?: string;
+  initial?: Expense | null;
   saving?: boolean;
 }) {
-  const [editionId, setEditionId] = useState(defaultEditionId ?? "");
-  const [expenseDate, setExpenseDate] = useState(today());
-  const [category, setCategory] = useState<ExpenseInput["category"]>("materiales");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [notes, setNotes] = useState("");
+  const [editionId, setEditionId] = useState(initial?.course_edition_id ?? defaultEditionId ?? "");
+  const [expenseDate, setExpenseDate] = useState(initial?.expense_date ?? today());
+  const [category, setCategory] = useState<ExpenseInput["category"]>(initial?.category ?? "materiales");
+  const [amount, setAmount] = useState(initial?.amount ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const { data: courseTypes } = useQuery({ queryKey: ["course-types"], queryFn: listCourseTypes });
   const { data: editionsByType } = useQuery({
@@ -54,13 +56,15 @@ export function ExpenseForm({
       description: description || null,
       notes: notes || null,
     });
-    setAmount("");
-    setDescription("");
-    setNotes("");
+    if (!initial) {
+      setAmount("");
+      setDescription("");
+      setNotes("");
+    }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Registrar gasto">
+    <Dialog open={open} onClose={onClose} title={initial ? "Editar gasto" : "Registrar gasto"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {!defaultEditionId && (
           <Field label="Edición (opcional — dejalo vacío para un gasto general)">
@@ -117,7 +121,7 @@ export function ExpenseForm({
             Cancelar
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? "Guardando..." : "Registrar"}
+            {saving ? "Guardando..." : initial ? "Guardar" : "Registrar"}
           </Button>
         </div>
       </form>
