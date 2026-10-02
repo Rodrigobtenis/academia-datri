@@ -9,6 +9,7 @@ import { exportToExcel } from "../../lib/excel-export";
 import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS } from "../../types/payment";
 import { MONTHS } from "../../lib/months";
 import type { CommissionPaymentRow } from "../../types/commission";
+import { GoalProgressCard } from "../../components/goal-progress-card";
 
 type SortKey = "fecha" | "alumna" | "curso" | "edicion" | "tipo" | "metodo" | "monto" | "porcentaje" | "comision";
 
@@ -158,6 +159,10 @@ export default function ComisionesPage() {
             Exportar Excel
           </Button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <GoalProgressCard compact />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

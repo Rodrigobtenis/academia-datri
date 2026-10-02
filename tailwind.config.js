@@ -17,6 +17,25 @@ export default {
           900: "#831843",
         },
       },
+      keyframes: {
+        "goal-float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-3px)" },
+        },
+        "goal-shine": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+        "goal-ping": {
+          "0%": { transform: "scale(1)", opacity: "0.55" },
+          "100%": { transform: "scale(1.9)", opacity: "0" },
+        },
+      },
+      animation: {
+        "goal-float": "goal-float 2.4s ease-in-out infinite",
+        "goal-shine": "goal-shine 2.8s ease-in-out infinite",
+        "goal-ping": "goal-ping 1.8s ease-out infinite",
+      },
     },
   },
   plugins: [],

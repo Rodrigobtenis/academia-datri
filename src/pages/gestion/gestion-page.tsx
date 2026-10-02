@@ -12,6 +12,7 @@ import {
 import { listProfitability } from "../../lib/api/profitability";
 import { listGoalProgressHistory } from "../../lib/api/goals";
 import { GoalProgressCard } from "../../components/goal-progress-card";
+import { GoalBar } from "../../components/goal-bar";
 import { TextInput, Select } from "../../components/ui/field";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
@@ -161,7 +162,6 @@ export default function GestionPage() {
                 {goalHistory?.map((g) => {
                   const percent = g.percent_complete ?? 0;
                   const state = goalState(percent);
-                  const barPercent = Math.min(100, Math.max(0, percent));
                   return (
                     <tr key={g.goal_id}>
                       <td className="px-4 py-2 font-medium text-gray-900">
@@ -171,8 +171,8 @@ export default function GestionPage() {
                       <td className="px-4 py-2 text-right">{formatMoney(g.collected)}</td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 flex-1 rounded-full bg-gray-100 overflow-hidden">
-                            <div className={`h-full ${GOAL_STATE_COLORS[state]}`} style={{ width: `${barPercent}%` }} />
+                          <div className="flex-1 min-w-[96px]">
+                            <GoalBar percent={percent} size="sm" />
                           </div>
                           <span className="text-xs text-gray-500 w-9 text-right shrink-0">{percent.toFixed(0)}%</span>
                         </div>

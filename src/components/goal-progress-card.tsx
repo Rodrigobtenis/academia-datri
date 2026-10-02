@@ -3,6 +3,7 @@ import { getGoalProgress } from "../lib/api/goals";
 import { formatMoney } from "../lib/money";
 import { nowInArgentina } from "../lib/date-ar";
 import { goalState, GOAL_STATE_COLORS, GOAL_STATE_LABELS } from "../types/goal";
+import { GoalBar } from "./goal-bar";
 
 export function GoalProgressCard({ compact }: { compact?: boolean }) {
   const { day, month, year, daysInMonth } = nowInArgentina();
@@ -33,7 +34,6 @@ export function GoalProgressCard({ compact }: { compact?: boolean }) {
   const remaining = target - collected;
   const percent = progress.percent_complete ?? 0;
   const state = goalState(percent);
-  const barPercent = Math.min(100, Math.max(0, percent));
 
   const daysRemaining = Math.max(0, daysInMonth - day);
   const dailyPaceNeeded = remaining > 0 && daysRemaining > 0 ? remaining / daysRemaining : 0;
@@ -56,9 +56,16 @@ export function GoalProgressCard({ compact }: { compact?: boolean }) {
         </span>
       </div>
 
-      <div className="h-3 rounded-full bg-gray-100 overflow-hidden mb-2">
-        <div className={`h-full ${GOAL_STATE_COLORS[state]}`} style={{ width: `${barPercent}%` }} />
+      <div className="mb-1">
+        <GoalBar percent={percent} expectedPercent={expectedPercent} />
       </div>
+      <p className={`text-xs mb-2 ${state === "cumplido" || paceDiff >= 0 ? "text-emerald-600" : "text-amber-600"}`}>
+        {state === "cumplido"
+          ? "¡Objetivo cumplido!"
+          : paceDiff >= 0
+            ? "Vas adelantada al ritmo del mes — la línea gris marca dónde deberías estar hoy."
+            : `Estás ${Math.abs(paceDiff).toFixed(0)} puntos por debajo de donde deberías ir hoy (línea gris).`}
+      </p>
 
       <div className="flex items-baseline justify-between">
         <span className="text-2xl font-semibold text-gray-900">{percent.toFixed(0)}%</span>
