@@ -68,7 +68,7 @@ export function PaymentForm({
   return (
     <Dialog open={open} onClose={onClose} title="Registrar pago">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Fecha del pago *">
             <TextInput
               type="date"
@@ -89,7 +89,7 @@ export function PaymentForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Tipo de pago">
             <Select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)}>
               {Object.entries(PAYMENT_TYPE_LABELS).map(([value, label]) => (

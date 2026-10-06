@@ -73,7 +73,7 @@ export function StudentForm({
   return (
     <Dialog open={open} onClose={onClose} title={initial ? "Editar alumna" : "Nueva alumna"} wide>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nombre *">
             <TextInput
               required
@@ -90,7 +90,7 @@ export function StudentForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="DNI">
             <TextInput value={form.dni ?? ""} onChange={(e) => update("dni", e.target.value)} />
           </Field>
@@ -103,7 +103,7 @@ export function StudentForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Teléfono">
             <TextInput value={form.phone ?? ""} onChange={(e) => update("phone", e.target.value)} />
           </Field>
@@ -129,7 +129,7 @@ export function StudentForm({
           />
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Ciudad">
             <TextInput value={form.city ?? ""} onChange={(e) => update("city", e.target.value)} />
           </Field>
@@ -147,7 +147,7 @@ export function StudentForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Profesión">
             <TextInput
               value={form.profession ?? ""}
@@ -162,7 +162,7 @@ export function StudentForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Cómo nos conoció">
             <Select
               value={form.source ?? ""}

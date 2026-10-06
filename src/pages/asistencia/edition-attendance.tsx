@@ -114,13 +114,13 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
       </div>
 
       <div className="divide-y divide-gray-100">
-        <div className="grid grid-cols-3 gap-4 pb-2 text-xs text-gray-400 uppercase">
+        <div className="hidden sm:grid grid-cols-3 gap-4 pb-2 text-xs text-gray-400 uppercase">
           <span>Alumna</span>
           <span>Asistencia ({formatDateAR(selectedDate)})</span>
           <span>Certificado</span>
         </div>
         {activeEnrollments.map((e) => (
-          <div key={e.id} className="grid grid-cols-3 gap-4 py-2 items-center text-sm">
+          <div key={e.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 py-3 sm:py-2 sm:items-center text-sm">
             <span className="font-medium text-gray-900">
               {e.students?.last_name}, {e.students?.first_name}
             </span>

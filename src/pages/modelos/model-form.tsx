@@ -51,7 +51,7 @@ export function ModelForm({
   return (
     <Dialog open={open} onClose={onClose} title={initial ? "Editar modelo" : "Nueva modelo"} wide>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nombre *">
             <TextInput required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </Field>
@@ -60,7 +60,7 @@ export function ModelForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Edad">
             <TextInput type="number" min={0} max={119} value={age} onChange={(e) => setAge(e.target.value)} />
           </Field>

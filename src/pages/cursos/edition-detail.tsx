@@ -112,13 +112,13 @@ export default function EditionDetail() {
     setForceError(null);
   }
 
-  if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
-  if (!edition) return <div className="p-8 text-gray-400 text-sm">No se encontró la edición.</div>;
+  if (isLoading) return <div className="p-4 sm:p-8 text-gray-400 text-sm">Cargando...</div>;
+  if (!edition) return <div className="p-4 sm:p-8 text-gray-400 text-sm">No se encontró la edición.</div>;
 
   const full = Boolean(occupancy && occupancy.available <= 0);
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-8 max-w-5xl">
       <button
         onClick={() => navigate(`/cursos/${courseTypeId}${tipoQuery}`)}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
@@ -126,7 +126,7 @@ export default function EditionDetail() {
         ← Ediciones
       </button>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-gray-900">

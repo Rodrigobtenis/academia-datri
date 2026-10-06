@@ -15,7 +15,7 @@ export default function CursosVigentes() {
   });
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <button onClick={() => navigate("/cursos")} className="text-sm text-gray-400 hover:text-gray-600 mb-4">
         ← Cursos
       </button>
@@ -34,7 +34,7 @@ export default function CursosVigentes() {
         {editions?.map((ed) => (
           <div
             key={ed.id}
-            className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between hover:border-brand-300 transition cursor-pointer"
+            className="bg-white rounded-xl border border-gray-200 p-5 flex flex-wrap items-center justify-between gap-3 hover:border-brand-300 transition cursor-pointer"
             onClick={() => navigate(`/cursos/${ed.course_type_id}/${ed.id}`)}
           >
             <div>

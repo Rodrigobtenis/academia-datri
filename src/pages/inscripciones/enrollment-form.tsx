@@ -124,7 +124,7 @@ export function EnrollmentForm({
         <StudentPicker onSelect={setStudent} />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50 rounded-lg px-3 py-2">
             <span className="text-sm font-medium text-gray-800">
               {student.last_name}, {student.first_name}
             </span>
@@ -148,7 +148,7 @@ export function EnrollmentForm({
             />
           </Field>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Descuento">
               <Select value={discountType} onChange={(e) => setDiscountType(e.target.value as DiscountType | "")}>
                 <option value="">Sin descuento</option>
@@ -175,7 +175,7 @@ export function EnrollmentForm({
             </Field>
           </div>
 
-          <div className="rounded-lg bg-brand-50 px-4 py-3 flex items-center justify-between">
+          <div className="rounded-lg bg-brand-50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <span className="text-sm text-brand-700">Precio final</span>
             <span className="text-lg font-semibold text-brand-800">{formatMoney(finalPrice)}</span>
           </div>
@@ -201,7 +201,7 @@ export function EnrollmentForm({
             </label>
             {addSena && (
               <div className="mt-3 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Monto de la seña *">
                     <TextInput
                       type="number"

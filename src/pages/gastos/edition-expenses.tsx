@@ -41,7 +41,7 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Gastos de esta edición</h2>
         <Button variant="secondary" onClick={() => setCreating(true)}>
           + Gasto
@@ -53,7 +53,7 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
       ) : (
         <div className="space-y-2">
           {expenses?.map((e) => (
-            <div key={e.id} className="flex items-center justify-between text-sm">
+            <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
               <span className="text-gray-600">
                 {EXPENSE_CATEGORY_LABELS[e.category]}
                 {e.description ? ` — ${e.description}` : ""}

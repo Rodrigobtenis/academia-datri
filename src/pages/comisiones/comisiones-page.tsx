@@ -132,8 +132,8 @@ export default function ComisionesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">Comisiones</h1>
           <p className="text-sm text-gray-500">

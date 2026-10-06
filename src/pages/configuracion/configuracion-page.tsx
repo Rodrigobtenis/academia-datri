@@ -102,7 +102,7 @@ export default function ConfiguracionPage() {
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
   return (
-    <div className="p-8 max-w-3xl space-y-6">
+    <div className="p-4 sm:p-8 max-w-3xl space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-gray-900">Configuración</h1>
         <p className="text-sm text-gray-500">Privado — solo vos podés definir objetivos y el % de comisión.</p>
@@ -111,7 +111,7 @@ export default function ConfiguracionPage() {
       <section className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Objetivo mensual</h2>
         <form onSubmit={handleGoalSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Mes">
               <select
                 value={goalMonth}

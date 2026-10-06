@@ -125,13 +125,13 @@ export default function InscripcionDetail() {
     setDeleteError(null);
   }
 
-  if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
-  if (!enrollment) return <div className="p-8 text-gray-400 text-sm">No se encontró la inscripción.</div>;
+  if (isLoading) return <div className="p-4 sm:p-8 text-gray-400 text-sm">Cargando...</div>;
+  if (!enrollment) return <div className="p-4 sm:p-8 text-gray-400 text-sm">No se encontró la inscripción.</div>;
 
   const balanceAmount = parseFloat(balance?.balance ?? enrollment.final_price);
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-8 max-w-3xl">
       <button
         onClick={() =>
           enrollment.course_editions &&
@@ -143,7 +143,7 @@ export default function InscripcionDetail() {
           (enrollment.course_editions ? formatDateAR(enrollment.course_editions.start_date) : "Edición")}
       </button>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
             {enrollment.students?.last_name}, {enrollment.students?.first_name}
@@ -164,7 +164,7 @@ export default function InscripcionDetail() {
       </div>
 
       <section className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-sm font-semibold text-gray-900">Precio</h2>
           <Button variant="ghost" onClick={() => setEditingPrice(true)}>
             Editar
@@ -200,7 +200,7 @@ export default function InscripcionDetail() {
       </section>
 
       <section className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-sm font-semibold text-gray-900">Pagos</h2>
           <Button onClick={() => setRegistering(true)}>+ Registrar pago</Button>
         </div>
@@ -225,7 +225,7 @@ export default function InscripcionDetail() {
         <div className="divide-y divide-gray-100">
           {payments?.length === 0 && <p className="text-sm text-gray-400 py-4">Sin pagos registrados.</p>}
           {payments?.map((p) => (
-            <div key={p.id} className="py-3 flex items-center justify-between text-sm">
+            <div key={p.id} className="py-3 flex flex-wrap items-center justify-between gap-3 text-sm">
               <div>
                 <div className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-900"}>
                   {formatDateAR(p.payment_date)} ·{" "}

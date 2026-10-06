@@ -73,7 +73,7 @@ export function PriceEditForm({
           />
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Descuento">
             <Select value={discountType} onChange={(e) => setDiscountType(e.target.value as DiscountType | "")}>
               <option value="">Sin descuento</option>
@@ -100,7 +100,7 @@ export function PriceEditForm({
           </Field>
         </div>
 
-        <div className="rounded-lg bg-brand-50 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-lg bg-brand-50 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-brand-700">Precio final</span>
           <span className="text-lg font-semibold text-brand-800">{formatMoney(finalPrice)}</span>
         </div>

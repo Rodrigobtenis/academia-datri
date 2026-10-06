@@ -73,7 +73,7 @@ export function DocumentsCard({ studentId, enrollmentId }: { studentId?: string;
       ) : (
         <div className="space-y-1">
           {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between text-sm py-1">
+            <div key={doc.id} className="flex flex-wrap items-center justify-between gap-3 text-sm py-1">
               <button onClick={() => handleView(doc)} className="text-brand-600 hover:text-brand-700 text-left">
                 {DOCUMENT_TYPE_LABELS[doc.type]}
               </button>

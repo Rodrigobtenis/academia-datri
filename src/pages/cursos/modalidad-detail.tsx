@@ -69,7 +69,7 @@ export default function ModalidadDetail() {
   });
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <button
         onClick={() => navigate(`/cursos${tipoQuery}`)}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
@@ -77,7 +77,7 @@ export default function ModalidadDetail() {
         ← Modalidades{tipo ? ` (${EDITION_MODALITY_LABELS[tipo]})` : ""}
       </button>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold text-gray-900">{courseType?.name}</h1>
@@ -105,7 +105,7 @@ export default function ModalidadDetail() {
           return (
             <div
               key={ed.id}
-              className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between hover:border-brand-300 transition cursor-pointer"
+              className="bg-white rounded-xl border border-gray-200 p-5 flex flex-wrap items-center justify-between gap-3 hover:border-brand-300 transition cursor-pointer"
               onClick={() => navigate(`/cursos/${courseTypeId}/${ed.id}${tipoQuery}`)}
             >
               <div>

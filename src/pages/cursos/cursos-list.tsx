@@ -13,7 +13,7 @@ import { EDITION_MODALITY_LABELS, type EditionModality } from "../../types/cours
 function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void }) {
   const navigate = useNavigate();
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="mb-6">
         <h1 className="text-lg font-semibold text-gray-900">Cursos</h1>
         <p className="text-sm text-gray-500">¿Presencial, online o personalizado? Entrá a la que necesites.</p>
@@ -94,7 +94,7 @@ export default function CursosList() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <button
         onClick={() => setSearchParams({})}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
@@ -102,7 +102,7 @@ export default function CursosList() {
         ← Presencial / Online / Personalizado
       </button>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">
             Cursos — Modalidades <span className="text-gray-400 font-normal">· {EDITION_MODALITY_LABELS[tipo]}</span>

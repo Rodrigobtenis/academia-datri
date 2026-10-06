@@ -161,13 +161,13 @@ export function EditionRoster({
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-sm font-semibold text-gray-900">Alumnas inscriptas</h2>
         {!full && <Button onClick={() => setEnrolling(true)}>+ Agregar alumna</Button>}
       </div>
 
       {full && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-center justify-between">
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm text-red-700 font-medium">CURSO COMPLETO</span>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setAddingToWaitlist(true)}>
@@ -261,7 +261,7 @@ export function EditionRoster({
           <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Lista de espera</h3>
           <div className="space-y-2">
             {waitlist?.map((w) => (
-              <div key={w.id} className="flex items-center justify-between text-sm">
+              <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <span>
                   {w.students?.last_name}, {w.students?.first_name}{" "}
                   <span className="text-gray-400">{w.phone ? `· ${w.phone}` : ""}</span>

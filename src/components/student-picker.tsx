@@ -54,7 +54,7 @@ export function StudentPicker({
     return (
       <div className="space-y-3 border border-gray-200 rounded-lg p-4">
         <div className="text-sm font-medium text-gray-700">Crear nueva {personLabel}</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <TextInput
             placeholder="Nombre *"
             value={firstName}

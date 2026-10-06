@@ -83,7 +83,7 @@ export function ExpenseForm({
           </Field>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Fecha *">
             <TextInput type="date" required value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} />
           </Field>

@@ -81,11 +81,11 @@ export default function AlumnaDetail() {
     },
   });
 
-  if (isLoading) return <div className="p-8 text-gray-400 text-sm">Cargando...</div>;
-  if (!student) return <div className="p-8 text-gray-400 text-sm">No se encontró la alumna.</div>;
+  if (isLoading) return <div className="p-4 sm:p-8 text-gray-400 text-sm">Cargando...</div>;
+  if (!student) return <div className="p-4 sm:p-8 text-gray-400 text-sm">No se encontró la alumna.</div>;
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-8 max-w-5xl">
       <button
         onClick={() => navigate("/alumnas")}
         className="text-sm text-gray-400 hover:text-gray-600 mb-4"
@@ -93,7 +93,7 @@ export default function AlumnaDetail() {
         ← Alumnas
       </button>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
             {student.last_name}, {student.first_name}
@@ -139,7 +139,7 @@ export default function AlumnaDetail() {
           </section>
 
           <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <h2 className="text-sm font-semibold text-gray-900">Cursos e inscripciones</h2>
               {enrollments && (
                 <Badge color={enrollments.length > 1 ? "brand" : "gray"}>
@@ -159,7 +159,7 @@ export default function AlumnaDetail() {
                 <button
                   key={e.id}
                   onClick={() => navigate(`/inscripciones/${e.id}`)}
-                  className="w-full flex items-center justify-between text-left px-3 py-2 rounded-lg hover:bg-gray-50 border border-gray-100"
+                  className="w-full flex flex-wrap items-center justify-between gap-3 text-left px-3 py-2 rounded-lg hover:bg-gray-50 border border-gray-100"
                 >
                   <span className="text-sm text-gray-800">
                     {e.course_editions?.name ||
@@ -206,7 +206,7 @@ export default function AlumnaDetail() {
                 <p className="text-sm text-gray-400">Sin pagos registrados.</p>
               )}
               {payments?.map((p) => (
-                <div key={p.id} className="py-2 flex items-center justify-between text-sm">
+                <div key={p.id} className="py-2 flex flex-wrap items-center justify-between gap-3 text-sm">
                   <span className={p.status === "anulado" ? "line-through text-gray-400" : "text-gray-700"}>
                     {formatDateAR(p.payment_date)} · {formatMoney(p.amount)}
                   </span>

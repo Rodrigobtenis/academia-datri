@@ -128,7 +128,7 @@ export function EditionForm({
           </Select>
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {form.modality === "online" ? (
             <Field label="Fecha">
               <div className="flex items-center h-[38px] px-3 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-400">
@@ -160,7 +160,7 @@ export function EditionForm({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Docente">
             <TextInput value={form.teacher ?? ""} onChange={(e) => update("teacher", e.target.value)} />
           </Field>
@@ -177,7 +177,7 @@ export function EditionForm({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Precio *">
             <TextInput
               type="number"

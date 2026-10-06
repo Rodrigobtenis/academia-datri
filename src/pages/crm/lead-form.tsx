@@ -68,7 +68,7 @@ export function LeadForm({
           <TextInput required value={form.name} onChange={(e) => update("name", e.target.value)} />
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Teléfono">
             <TextInput value={form.phone ?? ""} onChange={(e) => update("phone", e.target.value)} />
           </Field>
@@ -80,7 +80,7 @@ export function LeadForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Curso de interés">
             <Select
               value={form.course_type_id ?? ""}
@@ -109,7 +109,7 @@ export function LeadForm({
           </Field>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Fecha de consulta">
             <TextInput
               type="date"
