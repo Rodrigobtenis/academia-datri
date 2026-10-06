@@ -178,6 +178,24 @@ export default function ComisionesPage() {
         </div>
       </div>
 
+      <div className="md:hidden flex items-center gap-2 mb-3 text-sm text-gray-500">
+        <span>Ordenar por</span>
+        <Select
+          value={sortKey ?? ""}
+          onChange={(e) => {
+            setSortKey((e.target.value || null) as SortKey | null);
+            setSortDir("asc");
+          }}
+          className="flex-1"
+        >
+          <option value="">Fecha de pago</option>
+          <option value="curso">Curso</option>
+          <option value="alumna">Alumna</option>
+          <option value="monto">Monto</option>
+          <option value="comision">Comisión</option>
+        </Select>
+      </div>
+
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -185,7 +203,7 @@ export default function ComisionesPage() {
             <tr>
               <SortableHeader label="Fecha" sortKey="fecha" active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Alumna" sortKey="alumna" active={sortKey} dir={sortDir} onClick={toggleSort} />
-              <SortableHeader label="Curso" sortKey="curso" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Curso" sortKey="curso" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Edición" sortKey="edicion" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Tipo" sortKey="tipo" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Método" sortKey="metodo" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
@@ -234,8 +252,11 @@ export default function ComisionesPage() {
             {sortedRows?.map((r) => (
               <tr key={r.payment_id}>
                 <td className="px-3 sm:px-4 py-2">{formatDateAR(r.payment_date)}</td>
-                <td className="px-3 sm:px-4 py-2">{r.student_name}</td>
-                <td className="px-3 sm:px-4 py-2">{r.course_name}</td>
+                <td className="px-3 sm:px-4 py-2">
+                  {r.student_name}
+                  <div className="md:hidden text-xs text-gray-400">{r.course_name}</div>
+                </td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2">{r.course_name}</td>
                 <td className="hidden md:table-cell px-3 sm:px-4 py-2">{r.edition_label}</td>
                 <td className="hidden md:table-cell px-3 sm:px-4 py-2">{PAYMENT_TYPE_LABELS[r.payment_type]}</td>
                 <td className="hidden md:table-cell px-3 sm:px-4 py-2">{PAYMENT_METHOD_LABELS[r.payment_method]}</td>
@@ -248,7 +269,10 @@ export default function ComisionesPage() {
           {rows && rows.length > 0 && (
             <tfoot className="bg-gray-50 font-medium">
               <tr>
-                <td colSpan={3} className="px-4 py-3 text-right">
+                <td colSpan={2} className="px-4 py-3 text-right md:hidden">
+                  Totales
+                </td>
+                <td colSpan={3} className="hidden md:table-cell px-4 py-3 text-right">
                   Totales
                 </td>
                 <td colSpan={3} className="hidden md:table-cell" />
