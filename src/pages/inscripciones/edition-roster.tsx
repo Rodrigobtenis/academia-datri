@@ -189,7 +189,7 @@ export function EditionRoster({
               <th className="text-left py-2 font-medium">Alumna</th>
               <th className="text-left py-2 font-medium">Estado</th>
               <th className="hidden sm:table-cell text-right py-2 font-medium">Precio final</th>
-              <th className="text-right py-2 font-medium">Pagado</th>
+              <th className="hidden sm:table-cell text-right py-2 font-medium">Pagado</th>
               <th className="text-right py-2 font-medium">Saldo</th>
               {modality === "online" && <th className="text-center py-2 font-medium">Acceso enviado</th>}
             </tr>
@@ -220,7 +220,7 @@ export function EditionRoster({
                       onChange={(ev) =>
                         handleStatusChange(e.id, e.status, ev.target.value as EnrollmentStatus, balanceAmount)
                       }
-                      className="!py-1 text-xs"
+                      className="!py-1 text-xs min-w-[7rem]"
                     >
                       {Object.entries(ENROLLMENT_STATUS_LABELS).map(([value, label]) => (
                         <option key={value} value={value}>
@@ -230,7 +230,7 @@ export function EditionRoster({
                     </Select>
                   </td>
                   <td className="hidden sm:table-cell py-2 text-right">{formatMoney(e.final_price)}</td>
-                  <td className="py-2 text-right text-emerald-600">{formatMoney(bal?.paid_amount ?? 0)}</td>
+                  <td className="hidden sm:table-cell py-2 text-right text-emerald-600">{formatMoney(bal?.paid_amount ?? 0)}</td>
                   <td className="py-2 text-right">
                     <button onClick={() => goToInscripcion(e.id)} className="inline-block" title="Ver pagos">
                       {parseFloat(balanceAmount) > 0 ? (
