@@ -90,12 +90,12 @@ export default function ModelosList() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Nombre</th>
-                <th className="text-left px-4 py-3 font-medium">Teléfono</th>
-                <th className="text-left px-4 py-3 font-medium">Edad</th>
-                <th className="text-left px-4 py-3 font-medium">Servicios</th>
-                <th className="text-left px-4 py-3 font-medium">Foto</th>
-                <th className="text-right px-4 py-3 font-medium">Acciones</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Nombre</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Teléfono</th>
+                <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Edad</th>
+                <th className="hidden md:table-cell text-left px-3 sm:px-4 py-3 font-medium">Servicios</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Foto</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -121,9 +121,9 @@ export default function ModelosList() {
                   >
                     {m.last_name}, {m.first_name}
                   </td>
-                  <td className="px-4 py-2 text-gray-600">{m.phone ?? "—"}</td>
-                  <td className="px-4 py-2 text-gray-600">{m.age ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-2 text-gray-600">{m.phone ?? "—"}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{m.age ?? "—"}</td>
+                  <td className="hidden md:table-cell px-3 sm:px-4 py-2">
                     <div className="flex flex-wrap gap-1">
                       {m.course_type_names.length === 0 && <span className="text-gray-400">—</span>}
                       {m.course_type_names.map((name, i) => (
@@ -133,7 +133,7 @@ export default function ModelosList() {
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-2">
                     {m.photo_url ? (
                       <button
                         className="text-brand-600 hover:text-brand-700 text-xs"
@@ -145,7 +145,7 @@ export default function ModelosList() {
                       <span className="text-gray-400 text-xs">Sin foto</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-3 sm:px-4 py-2 text-right">
                     <button className="text-xs text-gray-500 hover:text-gray-800 mr-3" onClick={() => setEditing(m)}>
                       Editar
                     </button>

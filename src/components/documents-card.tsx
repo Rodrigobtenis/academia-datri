@@ -47,7 +47,7 @@ export function DocumentsCard({ studentId, enrollmentId }: { studentId?: string;
   }
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
+    <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       <h2 className="text-sm font-semibold text-gray-900 mb-3">Documentación</h2>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">

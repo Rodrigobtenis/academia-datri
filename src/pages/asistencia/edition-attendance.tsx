@@ -82,7 +82,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
 
   if (activeEnrollments.length === 0) {
     return (
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-2">Asistencia y certificados</h2>
         <p className="text-sm text-gray-400">Todavía no hay alumnas inscriptas.</p>
       </section>
@@ -90,7 +90,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
   }
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
+    <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       <h2 className="text-sm font-semibold text-gray-900 mb-4">Asistencia y certificados</h2>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">

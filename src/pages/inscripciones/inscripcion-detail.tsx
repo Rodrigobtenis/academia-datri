@@ -163,7 +163,7 @@ export default function InscripcionDetail() {
         </div>
       </div>
 
-      <section className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-sm font-semibold text-gray-900">Precio</h2>
           <Button variant="ghost" onClick={() => setEditingPrice(true)}>
@@ -199,7 +199,7 @@ export default function InscripcionDetail() {
         </div>
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-sm font-semibold text-gray-900">Pagos</h2>
           <Button onClick={() => setRegistering(true)}>+ Registrar pago</Button>

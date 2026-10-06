@@ -173,12 +173,12 @@ export default function ReportesPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium">Fecha</th>
-                    <th className="text-left px-4 py-3 font-medium">Alumna</th>
-                    <th className="text-left px-4 py-3 font-medium">Curso</th>
-                    <th className="text-left px-4 py-3 font-medium">Tipo</th>
-                    <th className="text-left px-4 py-3 font-medium">Método</th>
-                    <th className="text-right px-4 py-3 font-medium">Monto</th>
+                    <th className="text-left px-3 sm:px-4 py-3 font-medium">Fecha</th>
+                    <th className="text-left px-3 sm:px-4 py-3 font-medium">Alumna</th>
+                    <th className="text-left px-3 sm:px-4 py-3 font-medium">Curso</th>
+                    <th className="text-left px-3 sm:px-4 py-3 font-medium">Tipo</th>
+                    <th className="text-left px-3 sm:px-4 py-3 font-medium">Método</th>
+                    <th className="text-right px-3 sm:px-4 py-3 font-medium">Monto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -191,12 +191,12 @@ export default function ReportesPage() {
                   )}
                   {cobros?.map((r) => (
                     <tr key={r.payment_id}>
-                      <td className="px-4 py-2">{formatDateAR(r.payment_date)}</td>
-                      <td className="px-4 py-2">{r.student_name}</td>
-                      <td className="px-4 py-2">{r.course_name}</td>
-                      <td className="px-4 py-2">{PAYMENT_TYPE_LABELS[r.payment_type as keyof typeof PAYMENT_TYPE_LABELS] ?? r.payment_type}</td>
-                      <td className="px-4 py-2">{PAYMENT_METHOD_LABELS[r.payment_method as keyof typeof PAYMENT_METHOD_LABELS] ?? r.payment_method}</td>
-                      <td className="px-4 py-2 text-right">{formatMoney(r.amount)}</td>
+                      <td className="px-3 sm:px-4 py-2">{formatDateAR(r.payment_date)}</td>
+                      <td className="px-3 sm:px-4 py-2">{r.student_name}</td>
+                      <td className="px-3 sm:px-4 py-2">{r.course_name}</td>
+                      <td className="px-3 sm:px-4 py-2">{PAYMENT_TYPE_LABELS[r.payment_type as keyof typeof PAYMENT_TYPE_LABELS] ?? r.payment_type}</td>
+                      <td className="px-3 sm:px-4 py-2">{PAYMENT_METHOD_LABELS[r.payment_method as keyof typeof PAYMENT_METHOD_LABELS] ?? r.payment_method}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(r.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -206,7 +206,7 @@ export default function ReportesPage() {
                       <td colSpan={5} className="px-4 py-3 text-right">
                         Total
                       </td>
-                      <td className="px-4 py-3 text-right">{formatMoney(sumMoney(cobros.map((r) => r.amount)))}</td>
+                      <td className="px-3 sm:px-4 py-3 text-right">{formatMoney(sumMoney(cobros.map((r) => r.amount)))}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -222,11 +222,11 @@ export default function ReportesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Alumna</th>
-                  <th className="text-left px-4 py-3 font-medium">Curso</th>
-                  <th className="text-right px-4 py-3 font-medium">Precio final</th>
-                  <th className="text-right px-4 py-3 font-medium">Pagado</th>
-                  <th className="text-right px-4 py-3 font-medium">Saldo</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Alumna</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Curso</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Precio final</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Pagado</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Saldo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -239,13 +239,13 @@ export default function ReportesPage() {
                 )}
                 {deudas?.map((r) => (
                   <tr key={r.enrollment_id}>
-                    <td className="px-4 py-2 font-medium text-gray-900">{r.student_name}</td>
-                    <td className="px-4 py-2 text-gray-600">
+                    <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">{r.student_name}</td>
+                    <td className="px-3 sm:px-4 py-2 text-gray-600">
                       {r.course_name} · {r.edition_label}
                     </td>
-                    <td className="px-4 py-2 text-right">{formatMoney(r.final_price)}</td>
-                    <td className="px-4 py-2 text-right text-emerald-600">{formatMoney(r.paid)}</td>
-                    <td className="px-4 py-2 text-right text-amber-600 font-medium">{formatMoney(r.balance)}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(r.final_price)}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right text-emerald-600">{formatMoney(r.paid)}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right text-amber-600 font-medium">{formatMoney(r.balance)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -260,21 +260,21 @@ export default function ReportesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Curso</th>
-                  <th className="text-left px-4 py-3 font-medium">Edición</th>
-                  <th className="text-right px-4 py-3 font-medium">Cupos</th>
-                  <th className="text-right px-4 py-3 font-medium">Inscriptas</th>
-                  <th className="text-right px-4 py-3 font-medium">% Ocupación</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Curso</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Edición</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Cupos</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Inscriptas</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">% Ocupación</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {ocupacion?.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-2 font-medium text-gray-900">{r.course_name}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.edition_label}</td>
-                    <td className="px-4 py-2 text-right">{r.max_students}</td>
-                    <td className="px-4 py-2 text-right">{r.enrolled_count}</td>
-                    <td className="px-4 py-2 text-right">{r.occupancy_pct ?? 0}%</td>
+                    <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">{r.course_name}</td>
+                    <td className="px-3 sm:px-4 py-2 text-gray-600">{r.edition_label}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right">{r.max_students}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right">{r.enrolled_count}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right">{r.occupancy_pct ?? 0}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -289,17 +289,17 @@ export default function ReportesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Origen</th>
-                  <th className="text-right px-4 py-3 font-medium">Cantidad</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Origen</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Cantidad</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {origen?.map((r) => (
                   <tr key={r.source}>
-                    <td className="px-4 py-2 font-medium text-gray-900">
+                    <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">
                       {STUDENT_SOURCE_LABELS[r.source as keyof typeof STUDENT_SOURCE_LABELS] ?? "Sin dato"}
                     </td>
-                    <td className="px-4 py-2 text-right">{r.cantidad}</td>
+                    <td className="px-3 sm:px-4 py-2 text-right">{r.cantidad}</td>
                   </tr>
                 ))}
               </tbody>

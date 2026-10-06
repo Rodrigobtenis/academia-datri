@@ -40,7 +40,7 @@ export function EditionExpenses({ editionId }: { editionId: string }) {
   const total = sumMoney((expenses ?? []).map((e) => e.amount));
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
+    <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Gastos de esta edición</h2>
         <Button variant="secondary" onClick={() => setCreating(true)}>

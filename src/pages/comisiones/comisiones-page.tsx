@@ -32,6 +32,7 @@ function SortableHeader({
   dir,
   onClick,
   align = "left",
+  hideOnMobile,
 }: {
   label: string;
   sortKey: SortKey;
@@ -39,10 +40,11 @@ function SortableHeader({
   dir: "asc" | "desc";
   onClick: (key: SortKey) => void;
   align?: "left" | "right";
+  hideOnMobile?: boolean;
 }) {
   const isActive = active === sortKey;
   return (
-    <th className={`px-4 py-3 font-medium ${align === "right" ? "text-right" : "text-left"}`}>
+    <th className={`px-3 sm:px-4 py-3 font-medium ${align === "right" ? "text-right" : "text-left"} ${hideOnMobile ? "hidden md:table-cell" : ""}`}>
       <button
         type="button"
         onClick={() => onClick(sortKey)}
@@ -168,11 +170,11 @@ export default function ComisionesPage() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="text-xs text-gray-400">Total cobrado</div>
-          <div className="text-2xl font-semibold text-gray-900">{formatMoney(totals.totalCobrado)}</div>
+          <div className="text-xl sm:text-2xl font-semibold text-gray-900">{formatMoney(totals.totalCobrado)}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="text-xs text-gray-400">Comisión</div>
-          <div className="text-2xl font-semibold text-brand-700">{formatMoney(totals.totalComision)}</div>
+          <div className="text-xl sm:text-2xl font-semibold text-brand-700">{formatMoney(totals.totalComision)}</div>
         </div>
       </div>
 
@@ -184,9 +186,9 @@ export default function ComisionesPage() {
               <SortableHeader label="Fecha" sortKey="fecha" active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Alumna" sortKey="alumna" active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader label="Curso" sortKey="curso" active={sortKey} dir={sortDir} onClick={toggleSort} />
-              <SortableHeader label="Edición" sortKey="edicion" active={sortKey} dir={sortDir} onClick={toggleSort} />
-              <SortableHeader label="Tipo" sortKey="tipo" active={sortKey} dir={sortDir} onClick={toggleSort} />
-              <SortableHeader label="Método" sortKey="metodo" active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Edición" sortKey="edicion" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Tipo" sortKey="tipo" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableHeader label="Método" sortKey="metodo" hideOnMobile active={sortKey} dir={sortDir} onClick={toggleSort} />
               <SortableHeader
                 label="Monto"
                 sortKey="monto"
@@ -197,6 +199,7 @@ export default function ComisionesPage() {
               />
               <SortableHeader
                 label="%"
+                hideOnMobile
                 sortKey="porcentaje"
                 active={sortKey}
                 dir={sortDir}
@@ -230,27 +233,28 @@ export default function ComisionesPage() {
             )}
             {sortedRows?.map((r) => (
               <tr key={r.payment_id}>
-                <td className="px-4 py-2">{formatDateAR(r.payment_date)}</td>
-                <td className="px-4 py-2">{r.student_name}</td>
-                <td className="px-4 py-2">{r.course_name}</td>
-                <td className="px-4 py-2">{r.edition_label}</td>
-                <td className="px-4 py-2">{PAYMENT_TYPE_LABELS[r.payment_type]}</td>
-                <td className="px-4 py-2">{PAYMENT_METHOD_LABELS[r.payment_method]}</td>
-                <td className="px-4 py-2 text-right">{formatMoney(r.amount)}</td>
-                <td className="px-4 py-2 text-right text-gray-400">{r.rate_percent}%</td>
-                <td className="px-4 py-2 text-right font-medium">{formatMoney(r.commission_amount)}</td>
+                <td className="px-3 sm:px-4 py-2">{formatDateAR(r.payment_date)}</td>
+                <td className="px-3 sm:px-4 py-2">{r.student_name}</td>
+                <td className="px-3 sm:px-4 py-2">{r.course_name}</td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2">{r.edition_label}</td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2">{PAYMENT_TYPE_LABELS[r.payment_type]}</td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2">{PAYMENT_METHOD_LABELS[r.payment_method]}</td>
+                <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(r.amount)}</td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2 text-right text-gray-400">{r.rate_percent}%</td>
+                <td className="px-3 sm:px-4 py-2 text-right font-medium">{formatMoney(r.commission_amount)}</td>
               </tr>
             ))}
           </tbody>
           {rows && rows.length > 0 && (
             <tfoot className="bg-gray-50 font-medium">
               <tr>
-                <td colSpan={6} className="px-4 py-3 text-right">
+                <td colSpan={3} className="px-4 py-3 text-right">
                   Totales
                 </td>
-                <td className="px-4 py-3 text-right">{formatMoney(totals.totalCobrado)}</td>
-                <td />
-                <td className="px-4 py-3 text-right">{formatMoney(totals.totalComision)}</td>
+                <td colSpan={3} className="hidden md:table-cell" />
+                <td className="px-3 sm:px-4 py-3 text-right">{formatMoney(totals.totalCobrado)}</td>
+                <td className="hidden md:table-cell" />
+                <td className="px-3 sm:px-4 py-3 text-right">{formatMoney(totals.totalComision)}</td>
               </tr>
             </tfoot>
           )}

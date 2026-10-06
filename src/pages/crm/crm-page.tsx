@@ -79,12 +79,12 @@ export default function CrmPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Nombre</th>
-              <th className="text-left px-4 py-3 font-medium">Contacto</th>
-              <th className="text-left px-4 py-3 font-medium">Curso</th>
-              <th className="text-left px-4 py-3 font-medium">Seguimiento</th>
-              <th className="text-left px-4 py-3 font-medium">Estado</th>
-              <th className="text-right px-4 py-3 font-medium">Acciones</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Nombre</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Contacto</th>
+              <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Curso</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Seguimiento</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Estado</th>
+              <th className="text-right px-3 sm:px-4 py-3 font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -112,9 +112,9 @@ export default function CrmPage() {
                   >
                     {lead.name}
                   </td>
-                  <td className="px-4 py-2 text-gray-600">{lead.phone || lead.whatsapp || lead.instagram || "—"}</td>
-                  <td className="px-4 py-2 text-gray-600">{lead.course_types?.name ?? "—"}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-2 text-gray-600">{lead.phone || lead.whatsapp || lead.instagram || "—"}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{lead.course_types?.name ?? "—"}</td>
+                  <td className="px-3 sm:px-4 py-2">
                     {lead.next_followup ? (
                       <span className={overdue ? "text-red-600 font-medium" : "text-gray-600"}>
                         {formatDateAR(lead.next_followup)}
@@ -123,10 +123,10 @@ export default function CrmPage() {
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-2">
                     <Badge color={LEAD_STATUS_COLORS[lead.status]}>{LEAD_STATUS_LABELS[lead.status]}</Badge>
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-3 sm:px-4 py-2 text-right">
                     {lead.status !== "inscripta" && !lead.converted_student_id && (
                       <Button
                         variant="secondary"

@@ -144,11 +144,11 @@ export default function GestionPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Mes</th>
-                  <th className="text-right px-4 py-3 font-medium">Objetivo</th>
-                  <th className="text-right px-4 py-3 font-medium">Cobrado</th>
-                  <th className="text-left px-4 py-3 font-medium w-40">Progreso</th>
-                  <th className="text-right px-4 py-3 font-medium">Estado</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium">Mes</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Objetivo</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Cobrado</th>
+                  <th className="text-left px-3 sm:px-4 py-3 font-medium w-40">Progreso</th>
+                  <th className="text-right px-3 sm:px-4 py-3 font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -164,12 +164,12 @@ export default function GestionPage() {
                   const state = goalState(percent);
                   return (
                     <tr key={g.goal_id}>
-                      <td className="px-4 py-2 font-medium text-gray-900">
+                      <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">
                         {MONTHS[g.month - 1]} {g.year}
                       </td>
-                      <td className="px-4 py-2 text-right">{formatMoney(g.target_amount)}</td>
-                      <td className="px-4 py-2 text-right">{formatMoney(g.collected)}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(g.target_amount)}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(g.collected)}</td>
+                      <td className="px-3 sm:px-4 py-2">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 min-w-[96px]">
                             <GoalBar percent={percent} size="sm" />
@@ -177,7 +177,7 @@ export default function GestionPage() {
                           <span className="text-xs text-gray-500 w-9 text-right shrink-0">{percent.toFixed(0)}%</span>
                         </div>
                       </td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-3 sm:px-4 py-2 text-right">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full text-white ${GOAL_STATE_COLORS[state]}`}>
                           {GOAL_STATE_LABELS[state]}
                         </span>
@@ -231,11 +231,11 @@ export default function GestionPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Modalidad</th>
-                <th className="text-right px-4 py-3 font-medium">Ediciones</th>
-                <th className="text-right px-4 py-3 font-medium">Alumnas</th>
-                <th className="text-right px-4 py-3 font-medium">Vendido</th>
-                <th className="text-right px-4 py-3 font-medium">Cobrado</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Modalidad</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Ediciones</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Alumnas</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Vendido</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Cobrado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -248,11 +248,11 @@ export default function GestionPage() {
               )}
               {courseSummary?.map((c) => (
                 <tr key={c.course_type_id}>
-                  <td className="px-4 py-2 font-medium text-gray-900">{c.name}</td>
-                  <td className="px-4 py-2 text-right">{c.edition_count}</td>
-                  <td className="px-4 py-2 text-right">{c.enrollment_count}</td>
-                  <td className="px-4 py-2 text-right">{formatMoney(c.total_sold ?? 0)}</td>
-                  <td className="px-4 py-2 text-right">{formatMoney(c.total_collected)}</td>
+                  <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">{c.name}</td>
+                  <td className="px-3 sm:px-4 py-2 text-right">{c.edition_count}</td>
+                  <td className="px-3 sm:px-4 py-2 text-right">{c.enrollment_count}</td>
+                  <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(c.total_sold ?? 0)}</td>
+                  <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(c.total_collected)}</td>
                 </tr>
               ))}
             </tbody>
@@ -268,12 +268,12 @@ export default function GestionPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Edición</th>
-                <th className="text-left px-4 py-3 font-medium">Modalidad</th>
-                <th className="text-right px-4 py-3 font-medium">Ingresos</th>
-                <th className="text-right px-4 py-3 font-medium">Gastos</th>
-                <th className="text-right px-4 py-3 font-medium">Resultado</th>
-                <th className="text-right px-4 py-3 font-medium">Margen</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Edición</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Modalidad</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Ingresos</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Gastos</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Resultado</th>
+                <th className="text-right px-3 sm:px-4 py-3 font-medium">Margen</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -292,16 +292,16 @@ export default function GestionPage() {
                   const margin = income > 0 ? (parseFloat(p.profit) / income) * 100 : 0;
                   return (
                     <tr key={p.course_edition_id}>
-                      <td className="px-4 py-2 font-medium text-gray-900">
+                      <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">
                         {p.name || formatDateAR(p.edition_date)}
                       </td>
-                      <td className="px-4 py-2 text-gray-600">{p.course_type_name}</td>
-                      <td className="px-4 py-2 text-right">{formatMoney(p.income)}</td>
-                      <td className="px-4 py-2 text-right">{formatMoney(p.expenses_total)}</td>
+                      <td className="px-3 sm:px-4 py-2 text-gray-600">{p.course_type_name}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(p.income)}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right">{formatMoney(p.expenses_total)}</td>
                       <td className={`px-4 py-2 text-right font-medium ${parseFloat(p.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                         {formatMoney(p.profit)}
                       </td>
-                      <td className="px-4 py-2 text-right text-gray-500">{income > 0 ? `${margin.toFixed(0)}%` : "—"}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right text-gray-500">{income > 0 ? `${margin.toFixed(0)}%` : "—"}</td>
                     </tr>
                   );
                 })}

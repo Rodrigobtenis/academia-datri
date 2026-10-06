@@ -114,7 +114,7 @@ export default function AlumnaDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos personales</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <InfoRow label="DNI" value={student.dni} />
@@ -138,7 +138,7 @@ export default function AlumnaDetail() {
             )}
           </section>
 
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <h2 className="text-sm font-semibold text-gray-900">Cursos e inscripciones</h2>
               {enrollments && (
@@ -174,7 +174,7 @@ export default function AlumnaDetail() {
             </div>
           </section>
 
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Pagos y deuda</h2>
             {(() => {
               const totalPaid = sumMoney(
@@ -223,7 +223,7 @@ export default function AlumnaDetail() {
         </div>
 
         <div className="space-y-6">
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">Asistencia</h2>
             {(!attendance || attendance.length === 0) ? (
               <p className="text-sm text-gray-400">Sin registros de asistencia.</p>
@@ -238,7 +238,7 @@ export default function AlumnaDetail() {
               </div>
             )}
           </section>
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">Certificados</h2>
             {(!certificates || certificates.length === 0) ? (
               <p className="text-sm text-gray-400">Sin certificados.</p>
@@ -257,7 +257,7 @@ export default function AlumnaDetail() {
           </section>
           <DocumentsCard studentId={student.id} />
 
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-2">Alta</h2>
             <InfoRow label="Fecha de alta" value={new Date(student.created_at).toLocaleDateString("es-AR")} />
           </section>

@@ -160,7 +160,7 @@ export function EditionRoster({
   }
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
+    <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-sm font-semibold text-gray-900">Alumnas inscriptas</h2>
         {!full && <Button onClick={() => setEnrolling(true)}>+ Agregar alumna</Button>}
@@ -188,7 +188,7 @@ export function EditionRoster({
             <tr>
               <th className="text-left py-2 font-medium">Alumna</th>
               <th className="text-left py-2 font-medium">Estado</th>
-              <th className="text-right py-2 font-medium">Precio final</th>
+              <th className="hidden sm:table-cell text-right py-2 font-medium">Precio final</th>
               <th className="text-right py-2 font-medium">Pagado</th>
               <th className="text-right py-2 font-medium">Saldo</th>
               {modality === "online" && <th className="text-center py-2 font-medium">Acceso enviado</th>}
@@ -229,7 +229,7 @@ export function EditionRoster({
                       ))}
                     </Select>
                   </td>
-                  <td className="py-2 text-right">{formatMoney(e.final_price)}</td>
+                  <td className="hidden sm:table-cell py-2 text-right">{formatMoney(e.final_price)}</td>
                   <td className="py-2 text-right text-emerald-600">{formatMoney(bal?.paid_amount ?? 0)}</td>
                   <td className="py-2 text-right">
                     <button onClick={() => goToInscripcion(e.id)} className="inline-block" title="Ver pagos">

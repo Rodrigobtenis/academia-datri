@@ -110,11 +110,11 @@ export default function GastosPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Fecha</th>
-              <th className="text-left px-4 py-3 font-medium">Categoría</th>
-              <th className="text-left px-4 py-3 font-medium">Descripción</th>
-              <th className="text-left px-4 py-3 font-medium">Edición</th>
-              <th className="text-right px-4 py-3 font-medium">Monto</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Fecha</th>
+              <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Categoría</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Descripción</th>
+              <th className="hidden md:table-cell text-left px-3 sm:px-4 py-3 font-medium">Edición</th>
+              <th className="text-right px-3 sm:px-4 py-3 font-medium">Monto</th>
               <th />
             </tr>
           </thead>
@@ -135,14 +135,14 @@ export default function GastosPage() {
             )}
             {expenses?.map((e) => (
               <tr key={e.id}>
-                <td className="px-4 py-2">{formatDateAR(e.expense_date)}</td>
-                <td className="px-4 py-2">{EXPENSE_CATEGORY_LABELS[e.category]}</td>
-                <td className="px-4 py-2 text-gray-600">{e.description || "—"}</td>
-                <td className="px-4 py-2 text-gray-600">
+                <td className="px-3 sm:px-4 py-2">{formatDateAR(e.expense_date)}</td>
+                <td className="hidden sm:table-cell px-3 sm:px-4 py-2">{EXPENSE_CATEGORY_LABELS[e.category]}</td>
+                <td className="px-3 sm:px-4 py-2 text-gray-600">{e.description || "—"}</td>
+                <td className="hidden md:table-cell px-3 sm:px-4 py-2 text-gray-600">
                   {e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General")}
                 </td>
-                <td className="px-4 py-2 text-right font-medium">{formatMoney(e.amount)}</td>
-                <td className="px-4 py-2 text-right whitespace-nowrap">
+                <td className="px-3 sm:px-4 py-2 text-right font-medium">{formatMoney(e.amount)}</td>
+                <td className="px-3 sm:px-4 py-2 text-right whitespace-nowrap">
                   <button className="text-xs text-gray-500 hover:text-gray-800 mr-3" onClick={() => setEditing(e)}>
                     Editar
                   </button>

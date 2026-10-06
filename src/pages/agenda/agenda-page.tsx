@@ -28,7 +28,9 @@ export default function AgendaPage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const [view, setView] = useState<"mes" | "lista">("mes");
+  const [view, setView] = useState<"mes" | "lista">(() =>
+    typeof window !== "undefined" && window.innerWidth < 640 ? "lista" : "mes"
+  );
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -118,14 +120,14 @@ export default function AgendaPage() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="grid grid-cols-7 bg-gray-50 text-xs text-gray-400 uppercase">
             {WEEKDAYS.map((d) => (
-              <div key={d} className="px-2 py-2 text-center font-medium">
+              <div key={d} className="px-0.5 sm:px-2 py-2 text-center font-medium">
                 {d}
               </div>
             ))}
           </div>
           <div className="grid grid-cols-7">
             {cells.map((day, i) => (
-              <div key={i} className="min-h-24 border-t border-l border-gray-100 p-1 first:border-l-0">
+              <div key={i} className="min-h-14 sm:min-h-24 border-t border-l border-gray-100 p-0.5 sm:p-1 first:border-l-0">
                 {day && (
                   <>
                     <div className="text-xs text-gray-400 px-1">{day}</div>
@@ -134,7 +136,7 @@ export default function AgendaPage() {
                         <button
                           key={ed.id}
                           onClick={() => navigate(`/cursos/${ed.course_type_id}/${ed.id}`)}
-                          className={`w-full text-left text-xs rounded px-1.5 py-1 text-white ${
+                          className={`w-full text-left text-[10px] sm:text-xs leading-tight rounded px-1 sm:px-1.5 py-0.5 sm:py-1 text-white truncate ${
                             { gray: "bg-gray-400", green: "bg-emerald-500", blue: "bg-blue-500", amber: "bg-amber-500", red: "bg-red-500" }[
                               EDITION_STATUS_COLORS[ed.status]
                             ]
@@ -157,11 +159,11 @@ export default function AgendaPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Fecha</th>
-                <th className="text-left px-4 py-3 font-medium">Modalidad</th>
-                <th className="text-left px-4 py-3 font-medium">Sede</th>
-                <th className="text-left px-4 py-3 font-medium">Cupos</th>
-                <th className="text-left px-4 py-3 font-medium">Estado</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Fecha</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Modalidad</th>
+                <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Sede</th>
+                <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Cupos</th>
+                <th className="text-left px-3 sm:px-4 py-3 font-medium">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -178,11 +180,11 @@ export default function AgendaPage() {
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/cursos/${ed.course_type_id}/${ed.id}`)}
                 >
-                  <td className="px-4 py-2">{formatDateAR(ed.start_date)}</td>
-                  <td className="px-4 py-2 font-medium text-gray-900">{ed.course_types?.name}</td>
-                  <td className="px-4 py-2 text-gray-600">{ed.location || "—"}</td>
-                  <td className="px-4 py-2 text-gray-600">{ed.max_students}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-2">{formatDateAR(ed.start_date)}</td>
+                  <td className="px-3 sm:px-4 py-2 font-medium text-gray-900">{ed.course_types?.name}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{ed.location || "—"}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{ed.max_students}</td>
+                  <td className="px-3 sm:px-4 py-2">
                     <Badge color={EDITION_STATUS_COLORS[ed.status]}>{EDITION_STATUS_LABELS[ed.status]}</Badge>
                   </td>
                 </tr>

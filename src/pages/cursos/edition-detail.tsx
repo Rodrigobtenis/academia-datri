@@ -166,7 +166,7 @@ export default function EditionDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos de la edición</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {edition.modality === "online" ? (
@@ -197,7 +197,7 @@ export default function EditionDetail() {
 
         <div className="space-y-6">
           {edition.modality === "online" ? (
-            <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Acceso</h2>
               {edition.access_link ? (
                 <a
@@ -216,7 +216,7 @@ export default function EditionDetail() {
               </p>
             </section>
           ) : (
-            <section className="bg-white rounded-xl border border-gray-200 p-6">
+            <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Cupos</h2>
               {occupancy ? (
                 <div className="space-y-2 text-sm">

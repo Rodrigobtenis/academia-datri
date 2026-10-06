@@ -57,10 +57,10 @@ export default function AlumnasList() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Nombre</th>
-              <th className="text-left px-4 py-3 font-medium">Contacto</th>
-              <th className="text-left px-4 py-3 font-medium">Origen</th>
-              <th className="text-left px-4 py-3 font-medium">Estado</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Nombre</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Contacto</th>
+              <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Origen</th>
+              <th className="text-left px-3 sm:px-4 py-3 font-medium">Estado</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -84,12 +84,12 @@ export default function AlumnasList() {
                 className="hover:bg-gray-50 cursor-pointer"
                 onClick={() => navigate(`/alumnas/${s.id}`)}
               >
-                <td className="px-4 py-3 font-medium text-gray-900">
+                <td className="px-3 sm:px-4 py-3 font-medium text-gray-900">
                   {s.last_name}, {s.first_name}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{s.phone || s.email || "—"}</td>
-                <td className="px-4 py-3 text-gray-600">{s.source ?? "—"}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 sm:px-4 py-3 text-gray-600">{s.phone || s.email || "—"}</td>
+                <td className="hidden sm:table-cell px-3 sm:px-4 py-3 text-gray-600">{s.source ?? "—"}</td>
+                <td className="px-3 sm:px-4 py-3">
                   <Badge color={statusColor[s.status]}>{STUDENT_STATUS_LABELS[s.status]}</Badge>
                 </td>
               </tr>

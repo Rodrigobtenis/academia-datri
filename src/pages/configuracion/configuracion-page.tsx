@@ -108,7 +108,7 @@ export default function ConfiguracionPage() {
         <p className="text-sm text-gray-500">Privado — solo vos podés definir objetivos y el % de comisión.</p>
       </div>
 
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Objetivo mensual</h2>
         <form onSubmit={handleGoalSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -166,7 +166,7 @@ export default function ConfiguracionPage() {
         </form>
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-1">Porcentaje de comisión</h2>
         <p className="text-sm text-gray-500 mb-4">
           Vigente actualmente: <span className="font-medium text-gray-800">{currentRate?.rate_percent ?? "—"}%</span>
@@ -212,7 +212,7 @@ export default function ConfiguracionPage() {
         )}
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-200 p-6">
+      <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-1">Usuarios</h2>
         <p className="text-sm text-gray-500 mb-4">
           Para crear un usuario nuevo, agregalo primero en Supabase (Authentication → Users) con su

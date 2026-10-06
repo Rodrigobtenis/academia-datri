@@ -23,7 +23,7 @@ export function AlertsPanel() {
   });
 
   return (
-    <section className="bg-white rounded-xl border border-gray-200 p-6">
+    <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-4">
         <IconBell className="w-[18px] h-[18px] text-gray-400" />
         <h2 className="text-sm font-semibold text-gray-900">Alertas internas</h2>
