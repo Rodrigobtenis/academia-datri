@@ -110,7 +110,7 @@ export default function GastosPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="text-left px-3 sm:px-4 py-3 font-medium">Fecha</th>
+              <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Fecha</th>
               <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Categoría</th>
               <th className="text-left px-3 sm:px-4 py-3 font-medium">Descripción</th>
               <th className="hidden md:table-cell text-left px-3 sm:px-4 py-3 font-medium">Edición</th>
@@ -135,9 +135,14 @@ export default function GastosPage() {
             )}
             {expenses?.map((e) => (
               <tr key={e.id}>
-                <td className="px-3 sm:px-4 py-2">{formatDateAR(e.expense_date)}</td>
+                <td className="hidden sm:table-cell px-3 sm:px-4 py-2">{formatDateAR(e.expense_date)}</td>
                 <td className="hidden sm:table-cell px-3 sm:px-4 py-2">{EXPENSE_CATEGORY_LABELS[e.category]}</td>
-                <td className="px-3 sm:px-4 py-2 text-gray-600">{e.description || "—"}</td>
+                <td className="px-3 sm:px-4 py-2 text-gray-600">
+                  {e.description || "—"}
+                  <div className="sm:hidden text-xs text-gray-400">
+                    {formatDateAR(e.expense_date)} · {EXPENSE_CATEGORY_LABELS[e.category]}
+                  </div>
+                </td>
                 <td className="hidden md:table-cell px-3 sm:px-4 py-2 text-gray-600">
                   {e.course_editions?.name || (e.course_editions ? formatDateAR(e.course_editions.start_date) : "General")}
                 </td>

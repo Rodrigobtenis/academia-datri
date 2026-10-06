@@ -91,7 +91,7 @@ export default function ModelosList() {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 <th className="text-left px-3 sm:px-4 py-3 font-medium">Nombre</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-medium">Teléfono</th>
+                <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Teléfono</th>
                 <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Edad</th>
                 <th className="hidden md:table-cell text-left px-3 sm:px-4 py-3 font-medium">Servicios</th>
                 <th className="text-left px-3 sm:px-4 py-3 font-medium">Foto</th>
@@ -120,8 +120,9 @@ export default function ModelosList() {
                     onClick={() => setEditing(m)}
                   >
                     {m.last_name}, {m.first_name}
+                    {m.phone && <div className="sm:hidden text-xs font-normal text-gray-400">{m.phone}</div>}
                   </td>
-                  <td className="px-3 sm:px-4 py-2 text-gray-600">{m.phone ?? "—"}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{m.phone ?? "—"}</td>
                   <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{m.age ?? "—"}</td>
                   <td className="hidden md:table-cell px-3 sm:px-4 py-2">
                     <div className="flex flex-wrap gap-1">

@@ -80,7 +80,7 @@ export default function CrmPage() {
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="text-left px-3 sm:px-4 py-3 font-medium">Nombre</th>
-              <th className="text-left px-3 sm:px-4 py-3 font-medium">Contacto</th>
+              <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Contacto</th>
               <th className="hidden sm:table-cell text-left px-3 sm:px-4 py-3 font-medium">Curso</th>
               <th className="text-left px-3 sm:px-4 py-3 font-medium">Seguimiento</th>
               <th className="text-left px-3 sm:px-4 py-3 font-medium">Estado</th>
@@ -111,8 +111,11 @@ export default function CrmPage() {
                     onClick={() => setEditing(lead)}
                   >
                     {lead.name}
+                    <div className="sm:hidden text-xs font-normal text-gray-400">
+                      {lead.phone || lead.whatsapp || lead.instagram || ""}
+                    </div>
                   </td>
-                  <td className="px-3 sm:px-4 py-2 text-gray-600">{lead.phone || lead.whatsapp || lead.instagram || "—"}</td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{lead.phone || lead.whatsapp || lead.instagram || "—"}</td>
                   <td className="hidden sm:table-cell px-3 sm:px-4 py-2 text-gray-600">{lead.course_types?.name ?? "—"}</td>
                   <td className="px-3 sm:px-4 py-2">
                     {lead.next_followup ? (
