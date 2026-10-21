@@ -11,7 +11,6 @@ import {
 import { Button } from "../../components/ui/button";
 import { Dialog } from "../../components/ui/dialog";
 import { Field, TextInput, TextArea } from "../../components/ui/field";
-import { useAuth } from "../../lib/auth-context";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
@@ -35,7 +34,6 @@ export default function ModalidadDetail() {
   const tipo = searchParams.get("tipo") as EditionModality | null;
   const tipoQuery = tipo ? `?tipo=${tipo}` : "";
 
-  const { isAdmin } = useAuth();
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
@@ -108,7 +106,7 @@ export default function ModalidadDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold text-gray-900">{courseType?.name}</h1>
-            {isAdmin && courseType && (
+            {courseType && (
               <button onClick={startRename} className="text-xs text-gray-400 hover:text-gray-700 underline">
                 Editar
               </button>
