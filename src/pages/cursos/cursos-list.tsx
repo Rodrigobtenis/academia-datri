@@ -9,15 +9,23 @@ import { useAuth } from "../../lib/auth-context";
 import { AlertsPanel } from "../../components/alerts-panel";
 import { IconCalendar, IconMonitor, IconBolt, IconCap } from "../../components/icons";
 import { EDITION_MODALITY_LABELS, type EditionModality } from "../../types/course";
+import { TiendupImportDialog } from "./tiendup-import";
 
 function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void }) {
   const navigate = useNavigate();
+  const [importing, setImporting] = useState(false);
   return (
     <div className="p-4 sm:p-8">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-gray-900">Cursos</h1>
-        <p className="text-sm text-gray-500">¿Presencial, online o personalizado? Entrá a la que necesites.</p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">Cursos</h1>
+          <p className="text-sm text-gray-500">¿Presencial, online o personalizado? Entrá a la que necesites.</p>
+        </div>
+        <Button variant="secondary" onClick={() => setImporting(true)}>
+          Importar de Tiendup
+        </Button>
       </div>
+      <TiendupImportDialog open={importing} onClose={() => setImporting(false)} />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
         <button
           onClick={() => onPick("presencial")}
