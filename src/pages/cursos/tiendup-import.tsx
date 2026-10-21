@@ -47,27 +47,38 @@ export interface DuplicateSale {
   of: TiendupSale;
 }
 
-// Misma persona + mismo producto más de una vez en el archivo (típico: un intento de pago
-// Pendiente y después el Pagado). Se conserva una sola venta —la pagada, y entre iguales la
-// de número más bajo— y las demás se marcan como duplicadas y no se cargan.
+// Una persona puede comprar varios cursos: cada venta se identifica por su número. Solo se
+// considera duplicada una venta de la MISMA persona y el MISMO producto que sobra: el mismo
+// número repetido, o un intento sin pagar (Pendiente) cuando ya hay una Pagada. Si la misma
+// persona tiene dos ventas pagadas del mismo producto no se descarta ninguna (se avisa en la
+// revisión para que decida).
+function personKey(s: TiendupSale) {
+  return s.email.trim().toLowerCase() || normalizeText(`${s.firstName} ${s.lastName}`);
+}
+
 function splitDuplicates(all: TiendupSale[]): { unique: TiendupSale[]; duplicates: DuplicateSale[] } {
   const groups = new Map<string, TiendupSale[]>();
   for (const s of all) {
-    const person = s.email.trim().toLowerCase() || normalizeText(`${s.firstName} ${s.lastName}`);
-    const k = `${person}|${normalizeText(s.productName)}`;
+    const k = `${personKey(s)}|${normalizeText(s.productName)}`;
     groups.set(k, [...(groups.get(k) ?? []), s]);
   }
   const duplicates: DuplicateSale[] = [];
   const dropped = new Set<string>();
   for (const group of groups.values()) {
     if (group.length < 2) continue;
-    const primary = [...group].sort(
-      (a, b) => Number(b.isPaid) - Number(a.isPaid) || Number(a.orderNumber) - Number(b.orderNumber)
-    )[0];
-    for (const s of group) {
-      if (s.key === primary.key) continue;
-      dropped.add(s.key);
-      duplicates.push({ sale: s, of: primary });
+    const byNumber = [...group].sort((a, b) => Number(a.orderNumber) - Number(b.orderNumber));
+    const paid = byNumber.filter((s) => s.isPaid);
+    const primary = paid[0] ?? byNumber[0];
+    const seenNumbers = new Set<string>();
+    for (const s of byNumber) {
+      const repeatedNumber = seenNumbers.has(s.orderNumber);
+      seenNumbers.add(s.orderNumber);
+      const unpaidWhilePaidExists = !s.isPaid && paid.length > 0;
+      const extraUnpaid = !s.isPaid && paid.length === 0 && s.key !== primary.key;
+      if (s.key !== primary.key && (repeatedNumber || unpaidWhilePaidExists || extraUnpaid)) {
+        dropped.add(s.key);
+        duplicates.push({ sale: s, of: primary });
+      }
     }
   }
   return { unique: all.filter((s) => !dropped.has(s.key)), duplicates };
@@ -184,6 +195,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
         <ReviewCard
           key={sales[index].key}
           sale={sales[index]}
+          allSales={sales}
           position={index + 1}
           total={sales.length}
           courseTypes={courseTypes}
@@ -240,6 +252,7 @@ function DuplicateNotice({ duplicates }: { duplicates: DuplicateSale[] }) {
 
 function ReviewCard({
   sale,
+  allSales,
   position,
   total,
   courseTypes,
@@ -248,6 +261,7 @@ function ReviewCard({
   onCancel,
 }: {
   sale: TiendupSale;
+  allSales: TiendupSale[];
   position: number;
   total: number;
   courseTypes: CourseType[];
@@ -302,6 +316,8 @@ function ReviewCard({
     queryFn: () => findExistingEnrollment(studentSelection, editionSelection),
     enabled: Boolean(existing && selectedEdition),
   });
+
+  const otherPurchases = allSales.filter((s) => s.key !== sale.key && personKey(s) === personKey(sale));
 
   const importMutation = useMutation({
     mutationFn: () =>
@@ -363,6 +379,19 @@ function ReviewCard({
         )}
         {sale.isPaid && sale.totalAmount === 0 && (
           <div className="text-xs text-amber-600">Venta en $0 (sin cobro): se carga la inscripción sin registrar pago.</div>
+        )}
+        {otherPurchases.length > 0 && (
+          <div className="text-xs text-gray-500 pt-1">
+            Otras compras de esta persona en el archivo:
+            <ul className="list-disc pl-5">
+              {otherPurchases.map((o) => (
+                <li key={o.key} className={normalizeText(o.productName) === normalizeText(sale.productName) ? "text-amber-600" : ""}>
+                  Venta #{o.orderNumber} · {o.productName} · {o.paymentStatus || "sin estado"}
+                  {normalizeText(o.productName) === normalizeText(sale.productName) ? " — mismo producto, revisá que no sea una repetida" : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 
