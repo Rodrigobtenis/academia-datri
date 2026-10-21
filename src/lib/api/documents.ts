@@ -23,6 +23,18 @@ export async function listDocumentsByEnrollment(enrollmentId: string) {
   return data as DocumentRow[];
 }
 
+export async function listContractsByEnrollments(enrollmentIds: string[]) {
+  if (enrollmentIds.length === 0) return [] as DocumentRow[];
+  const { data, error } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("type", "contrato")
+    .in("enrollment_id", enrollmentIds)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as DocumentRow[];
+}
+
 export async function uploadDocument(params: {
   file: File;
   type: DocumentType;
@@ -31,7 +43,9 @@ export async function uploadDocument(params: {
   uploadedBy: string | null;
 }) {
   const folder = params.studentId ?? params.enrollmentId ?? "otros";
-  const path = `${folder}/${crypto.randomUUID()}-${params.file.name}`;
+  // Storage rechaza algunos caracteres (acentos, símbolos) en el nombre de la clave.
+  const safeName = params.file.name.replace(/[^A-Za-z0-9._-]/g, "_");
+  const path = `${folder}/${crypto.randomUUID()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, params.file);
   if (uploadError) throw uploadError;

@@ -8,6 +8,8 @@ import {
   setAttendance,
   setCertificateStatus,
 } from "../../lib/api/attendance";
+import { listContractsByEnrollments } from "../../lib/api/documents";
+import { ContractCell } from "./contract-cell";
 import { Select } from "../../components/ui/field";
 import { formatDateAR } from "../../lib/date-ar";
 import {
@@ -29,6 +31,13 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
   });
 
   const activeEnrollments = (enrollments ?? []).filter((e) => e.status !== "cancelada" && e.status !== "no_asistio");
+
+  const enrollmentIds = activeEnrollments.map((e) => e.id);
+  const { data: contracts } = useQuery({
+    queryKey: ["contracts", editionId, enrollmentIds],
+    queryFn: () => listContractsByEnrollments(enrollmentIds),
+    enabled: enrollmentIds.length > 0,
+  });
 
   const { data: dates } = useQuery({
     queryKey: ["attendance-dates", editionId],
@@ -83,7 +92,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
   if (activeEnrollments.length === 0) {
     return (
       <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-2">Asistencia y certificados</h2>
+        <h2 className="text-sm font-semibold text-gray-900 mb-2">Asistencia, certificados y contratos</h2>
         <p className="text-sm text-gray-400">Todavía no hay alumnas inscriptas.</p>
       </section>
     );
@@ -91,7 +100,7 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
 
   return (
     <section className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-      <h2 className="text-sm font-semibold text-gray-900 mb-4">Asistencia y certificados</h2>
+      <h2 className="text-sm font-semibold text-gray-900 mb-4">Asistencia, certificados y contratos</h2>
 
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {dates?.map((d) => (
@@ -114,13 +123,14 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
       </div>
 
       <div className="divide-y divide-gray-100">
-        <div className="hidden sm:grid grid-cols-3 gap-4 pb-2 text-xs text-gray-400 uppercase">
+        <div className="hidden sm:grid grid-cols-4 gap-4 pb-2 text-xs text-gray-400 uppercase">
           <span>Alumna</span>
           <span>Asistencia ({formatDateAR(selectedDate)})</span>
           <span>Certificado</span>
+          <span>Contrato</span>
         </div>
         {activeEnrollments.map((e) => (
-          <div key={e.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 py-3 sm:py-2 sm:items-center text-sm">
+          <div key={e.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 py-3 sm:py-2 sm:items-center text-sm">
             <span className="font-medium text-gray-900">
               {e.students?.last_name}, {e.students?.first_name}
             </span>
@@ -151,6 +161,11 @@ export function EditionAttendance({ editionId }: { editionId: string }) {
                 </option>
               ))}
             </Select>
+            <ContractCell
+              enrollmentId={e.id}
+              editionId={editionId}
+              contract={contracts?.find((c) => c.enrollment_id === e.id)}
+            />
           </div>
         ))}
       </div>

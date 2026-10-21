@@ -1,4 +1,4 @@
-export type DocumentType = "comprobante" | "dni" | "formulario" | "consentimiento" | "certificado" | "otro";
+export type DocumentType = "comprobante" | "dni" | "formulario" | "consentimiento" | "certificado" | "contrato" | "otro";
 
 export interface DocumentRow {
   id: string;
@@ -16,5 +16,6 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   formulario: "Formulario",
   consentimiento: "Consentimiento",
   certificado: "Certificado",
+  contrato: "Contrato",
   otro: "Otro",
 };
