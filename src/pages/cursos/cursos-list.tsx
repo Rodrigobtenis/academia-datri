@@ -82,7 +82,7 @@ export default function CursosList() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => createCourseType(name, description),
+    mutationFn: () => createCourseType(name, description, tipo),
     onSuccess: (type) => {
       queryClient.invalidateQueries({ queryKey: ["course-types"] });
       setCreating(false);
@@ -125,7 +125,9 @@ export default function CursosList() {
       {isLoading && <p className="text-sm text-gray-400">Cargando...</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {types?.map((t) => (
+        {types
+          ?.filter((t) => !t.modality || t.modality === tipo)
+          .map((t) => (
           <button
             key={t.id}
             onClick={() => navigate(`/cursos/${t.id}?tipo=${tipo}`)}

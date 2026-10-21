@@ -10,7 +10,7 @@ import {
 } from "../../lib/api/courses";
 import { Button } from "../../components/ui/button";
 import { Dialog } from "../../components/ui/dialog";
-import { Field, TextInput, TextArea } from "../../components/ui/field";
+import { Field, Select, TextInput, TextArea } from "../../components/ui/field";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
@@ -37,6 +37,7 @@ export default function ModalidadDetail() {
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [modalityDraft, setModalityDraft] = useState<EditionModality | "">("");
   const [renameError, setRenameError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [duplicateFrom, setDuplicateFrom] = useState<CourseEdition | null>(null);
@@ -65,7 +66,7 @@ export default function ModalidadDetail() {
   });
 
   const renameMutation = useMutation({
-    mutationFn: () => updateCourseType(courseTypeId!, nameDraft.trim(), descriptionDraft.trim()),
+    mutationFn: () => updateCourseType(courseTypeId!, nameDraft.trim(), descriptionDraft.trim(), modalityDraft || null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course-type", courseTypeId] });
       queryClient.invalidateQueries({ queryKey: ["course-types"] });
@@ -78,6 +79,7 @@ export default function ModalidadDetail() {
   function startRename() {
     setNameDraft(courseType?.name ?? "");
     setDescriptionDraft(courseType?.description ?? "");
+    setModalityDraft(courseType?.modality ?? "");
     setRenameError(null);
     setRenaming(true);
   }
@@ -198,6 +200,16 @@ export default function ModalidadDetail() {
           </Field>
           <Field label="Descripción">
             <TextArea rows={3} value={descriptionDraft} onChange={(e) => setDescriptionDraft(e.target.value)} />
+          </Field>
+          <Field label="Aparece en">
+            <Select value={modalityDraft} onChange={(e) => setModalityDraft(e.target.value as EditionModality | "")}>
+              <option value="">Todas las pestañas (sin clasificar)</option>
+              {Object.entries(EDITION_MODALITY_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  Solo {label}
+                </option>
+              ))}
+            </Select>
           </Field>
           {renameError && <p className="text-sm text-red-600">{renameError}</p>}
           <div className="flex justify-end gap-2 pt-2">

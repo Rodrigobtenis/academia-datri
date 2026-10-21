@@ -3,6 +3,9 @@ export interface CourseType {
   name: string;
   description: string | null;
   active: boolean;
+  // Pestaña en la que vive (presencial / online / personalizado). null = sin clasificar:
+  // se ve en todas hasta que se la asigne.
+  modality: EditionModality | null;
   created_at: string;
 }
 

@@ -1,5 +1,11 @@
 import { supabase } from "../supabase";
-import type { CourseEdition, CourseEditionInput, CourseType, EditionOccupancy } from "../../types/course";
+import type {
+  CourseEdition,
+  CourseEditionInput,
+  CourseType,
+  EditionModality,
+  EditionOccupancy,
+} from "../../types/course";
 
 export async function listCourseTypes() {
   const { data, error } = await supabase.from("course_types").select("*").order("name");
@@ -7,20 +13,25 @@ export async function listCourseTypes() {
   return data as CourseType[];
 }
 
-export async function createCourseType(name: string, description?: string) {
+export async function createCourseType(name: string, description?: string, modality?: EditionModality | null) {
   const { data, error } = await supabase
     .from("course_types")
-    .insert({ name, description: description || null })
+    .insert({ name, description: description || null, modality: modality ?? null })
     .select()
     .single();
   if (error) throw error;
   return data as CourseType;
 }
 
-export async function updateCourseType(id: string, name: string, description?: string) {
+export async function updateCourseType(
+  id: string,
+  name: string,
+  description?: string,
+  modality?: EditionModality | null
+) {
   const { data, error } = await supabase
     .from("course_types")
-    .update({ name, description: description || null })
+    .update({ name, description: description || null, modality: modality ?? null })
     .eq("id", id)
     .select()
     .single();

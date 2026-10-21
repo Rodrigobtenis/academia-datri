@@ -50,6 +50,9 @@ export default function AgendaPage() {
     queryKey: ["course-types"],
     queryFn: listCourseTypes,
   });
+  // La Agenda muestra cursos con fecha: al crear una edición desde acá solo se ofrecen las
+  // modalidades presenciales (o sin clasificar), no las online.
+  const pickableTypes = courseTypes?.filter((t) => !t.modality || t.modality === "presencial");
 
   const createMutation = useMutation({
     mutationFn: (input: CourseEditionInput) => createEdition(input),
@@ -61,7 +64,7 @@ export default function AgendaPage() {
   });
 
   function startCreating() {
-    setPickedType(courseTypes?.[0]?.id ?? "");
+    setPickedType(pickableTypes?.[0]?.id ?? "");
     setPickingType(true);
   }
 
@@ -199,7 +202,7 @@ export default function AgendaPage() {
         <div className="space-y-4">
           <Field label="Modalidad *">
             <Select value={pickedType} onChange={(e) => setPickedType(e.target.value)}>
-              {courseTypes?.map((t) => (
+              {pickableTypes?.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>

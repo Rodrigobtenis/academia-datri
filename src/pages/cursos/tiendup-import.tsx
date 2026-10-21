@@ -17,7 +17,7 @@ import { useAuth } from "../../lib/auth-context";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
 import { PAYMENT_METHOD_LABELS } from "../../types/payment";
-import type { CourseType } from "../../types/course";
+import { EDITION_MODALITY_LABELS, type CourseType } from "../../types/course";
 import { decodeCsvBuffer, parseTiendupCsv, type TiendupSale } from "../../lib/tiendup/parse";
 import { bestCourseMatch, mapPaymentMethod, normalizeText } from "../../lib/tiendup/match";
 
@@ -312,10 +312,15 @@ function ReviewCard({
   const onlineEditions = courseEditions?.filter((e) => e.modality === "online") ?? [];
   const presencialEditions =
     courseEditions?.filter((e) => e.modality === "presencial" && e.status !== "finalizado") ?? [];
-  const hasBoth = onlineEditions.length > 0 && presencialEditions.length > 0;
+  const hasBoth = !courseTypes.find((c) => c.id === courseTypeId)?.modality && onlineEditions.length > 0 && presencialEditions.length > 0;
   const nameSaysPresencial = normalizeText(sale.productName).includes("presencial");
+  const typeModality = courseTypes.find((c) => c.id === courseTypeId)?.modality;
   const modality: ImportModality =
-    presencialEditions.length > 0 && (onlineEditions.length === 0 || nameSaysPresencial) ? "presencial" : "online";
+    typeModality === "online" || typeModality === "presencial"
+      ? typeModality
+      : presencialEditions.length > 0 && (onlineEditions.length === 0 || nameSaysPresencial)
+        ? "presencial"
+        : "online";
   const editions =
     courseEditions &&
     (modality === "online" ? [...onlineEditions].reverse() : presencialEditions);
@@ -501,6 +506,7 @@ function ReviewCard({
           {courseTypes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
+              {c.modality ? ` (${EDITION_MODALITY_LABELS[c.modality]})` : ""}
             </option>
           ))}
         </Select>
