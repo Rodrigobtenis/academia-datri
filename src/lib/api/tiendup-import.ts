@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { CourseEdition, CourseEditionInput } from "../../types/course";
+import type { CourseEdition } from "../../types/course";
 import type { Enrollment } from "../../types/enrollment";
 import type { Student, StudentInput } from "../../types/student";
 import { digitsOnly, mapPaymentMethod, normalizeText } from "../tiendup/match";
@@ -82,13 +82,14 @@ export async function findStudentCandidates(sale: TiendupSale): Promise<StudentC
     .map((e) => ({ student: e.student, reasons: Array.from(e.reasons) }));
 }
 
-export async function listOnlineEditions(courseTypeId: string) {
-  const { data, error } = await supabase
-    .from("course_editions")
-    .select("*")
-    .eq("course_type_id", courseTypeId)
-    .eq("modality", "online")
-    .order("start_date", { ascending: false });
+export type ImportModality = "online" | "presencial";
+
+// Online: todas las ediciones (se elige la del mes). Presencial: solo las que todavía
+// pueden recibir inscriptas (no canceladas ni finalizadas), de la más próxima a la más lejana.
+export async function listEditionsForImport(courseTypeId: string, modality: ImportModality) {
+  let query = supabase.from("course_editions").select("*").eq("course_type_id", courseTypeId).eq("modality", modality);
+  if (modality === "presencial") query = query.not("status", "in", "(cancelado,finalizado)");
+  const { data, error } = await query.order("start_date", { ascending: modality === "presencial" });
   if (error) throw error;
   return data as CourseEdition[];
 }
@@ -121,8 +122,8 @@ export interface ImportSaleInput {
   existingStudentId: string | null;
   newStudent: { first_name: string; last_name: string; email: string; phone: string } | null;
   courseTypeId: string;
-  editionId: string | null;
-  newEditionName: string;
+  modality: ImportModality;
+  editionId: string;
   salesResponsible: string | null;
 }
 
@@ -130,7 +131,6 @@ export interface ImportSaleResult {
   studentId: string;
   enrollmentId: string;
   createdStudent: boolean;
-  createdEdition: boolean;
   paymentRegistered: boolean;
 }
 
@@ -166,35 +166,8 @@ export async function importSale(input: ImportSaleInput): Promise<ImportSaleResu
     createdStudent = true;
   }
 
-  let editionId = input.editionId;
-  let createdEdition = false;
-  if (!editionId) {
-    const edition: CourseEditionInput = {
-      course_type_id: input.courseTypeId,
-      name: input.newEditionName,
-      start_date: sale.paymentDate,
-      end_date: null,
-      start_time: null,
-      end_time: null,
-      location: null,
-      teacher: null,
-      max_students: 999,
-      list_price: String(sale.unitPrice),
-      promo_price: null,
-      status: "abierto",
-      modality: "online",
-      access_link: null,
-      description: null,
-      includes: null,
-      materials: null,
-      requirements: null,
-      internal_notes: null,
-    };
-    const { data, error } = await supabase.from("course_editions").insert(edition).select().single();
-    if (error) throw error;
-    editionId = (data as CourseEdition).id;
-    createdEdition = true;
-  }
+  // La edición tiene que existir: la importación nunca crea cursos ni ediciones.
+  const editionId = input.editionId;
 
   const finalPrice = sale.totalAmount;
   const originalPrice = Math.max(sale.unitPrice * sale.quantity, finalPrice);
@@ -242,5 +215,5 @@ export async function importSale(input: ImportSaleInput): Promise<ImportSaleResu
     paymentRegistered = true;
   }
 
-  return { studentId, enrollmentId, createdStudent, createdEdition, paymentRegistered };
+  return { studentId, enrollmentId, createdStudent, paymentRegistered };
 }

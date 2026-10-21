@@ -4,18 +4,18 @@ import { Dialog } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Field, Select, TextInput } from "../../components/ui/field";
-import { listCourseTypes } from "../../lib/api/courses";
+import { getOccupancy, listCourseTypes } from "../../lib/api/courses";
 import {
   findExistingEnrollment,
   findStudentCandidates,
   importSale,
   listImportedOrderNumbers,
-  listOnlineEditions,
+  listEditionsForImport,
+  type ImportModality,
 } from "../../lib/api/tiendup-import";
 import { useAuth } from "../../lib/auth-context";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
-import { MONTHS } from "../../lib/months";
 import { PAYMENT_METHOD_LABELS } from "../../types/payment";
 import type { CourseType } from "../../types/course";
 import { decodeCsvBuffer, parseTiendupCsv, type TiendupSale } from "../../lib/tiendup/parse";
@@ -23,19 +23,26 @@ import { bestCourseMatch, mapPaymentMethod, normalizeText } from "../../lib/tien
 
 const MAP_KEY = "tiendup-course-map";
 
-function loadSavedCourse(productName: string): string | null {
+interface SavedCourse {
+  courseTypeId: string;
+  modality: ImportModality;
+}
+
+function loadSavedCourse(productName: string): SavedCourse | null {
   try {
-    const map = JSON.parse(localStorage.getItem(MAP_KEY) ?? "{}") as Record<string, string>;
-    return map[normalizeText(productName)] ?? null;
+    const map = JSON.parse(localStorage.getItem(MAP_KEY) ?? "{}") as Record<string, string | SavedCourse>;
+    const saved = map[normalizeText(productName)];
+    if (!saved) return null;
+    return typeof saved === "string" ? { courseTypeId: saved, modality: "online" } : saved;
   } catch {
     return null;
   }
 }
 
-function saveCourse(productName: string, courseTypeId: string) {
+function saveCourse(productName: string, saved: SavedCourse) {
   try {
-    const map = JSON.parse(localStorage.getItem(MAP_KEY) ?? "{}") as Record<string, string>;
-    map[normalizeText(productName)] = courseTypeId;
+    const map = JSON.parse(localStorage.getItem(MAP_KEY) ?? "{}") as Record<string, string | SavedCourse>;
+    map[normalizeText(productName)] = saved;
     localStorage.setItem(MAP_KEY, JSON.stringify(map));
   } catch {
     // sin almacenamiento disponible: simplemente no se recuerda la elección
@@ -157,7 +164,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
             Subí el CSV de ventas que exportás de Tiendup. Te voy mostrando una venta por vez para que
-            confirmes los datos antes de cargarla. Solo se cargan cursos <strong>online</strong>.
+            confirmes los datos antes de cargarla. Se cargan cursos <strong>online</strong> y <strong>presenciales</strong>.
           </p>
           <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
             <li>Si la persona ya está registrada, se deja como está (no se modifica nada de su ficha).</li>
@@ -289,27 +296,42 @@ function ReviewCard({
 
   // --- Curso ---
   const auto = useMemo(() => {
-    const savedId = loadSavedCourse(sale.productName);
-    const saved = savedId ? courseTypes.find((c) => c.id === savedId) : null;
-    if (saved) return { courseType: saved, how: "Elegido en una importación anterior" };
+    const saved = loadSavedCourse(sale.productName);
+    const savedType = saved ? courseTypes.find((c) => c.id === saved.courseTypeId) : null;
+    if (saved && savedType) {
+      return { courseType: savedType, modality: saved.modality, how: "Elegido en una importación anterior" };
+    }
     const match = bestCourseMatch(sale.productName, courseTypes);
-    return match ? { courseType: match.courseType, how: "Coincidencia automática por nombre" } : null;
+    const guessed: ImportModality = normalizeText(sale.productName).includes("presencial") ? "presencial" : "online";
+    return match ? { courseType: match.courseType, modality: guessed, how: "Coincidencia automática por nombre" } : null;
   }, [sale.productName, courseTypes]);
   const [courseChoice, setCourseChoice] = useState<string | null>(null);
   const courseTypeId = courseChoice ?? auto?.courseType.id ?? "";
+  const [modalityChoice, setModalityChoice] = useState<ImportModality | null>(null);
+  const modality: ImportModality =
+    modalityChoice ?? auto?.modality ?? (normalizeText(sale.productName).includes("presencial") ? "presencial" : "online");
 
   const { data: editions } = useQuery({
-    queryKey: ["tiendup-editions", courseTypeId],
-    queryFn: () => listOnlineEditions(courseTypeId),
+    queryKey: ["tiendup-editions", courseTypeId, modality],
+    queryFn: () => listEditionsForImport(courseTypeId, modality),
     enabled: Boolean(courseTypeId),
   });
-  const month = Number(sale.paymentDate.slice(5, 7));
-  const year = sale.paymentDate.slice(0, 4);
-  const newEditionName = `${MONTHS[month - 1]} ${year}`;
-  const sameMonthEdition = editions?.find((e) => e.start_date.slice(0, 7) === sale.paymentDate.slice(0, 7));
+  // Online: la edición del mismo mes de la venta (si no hay, la más reciente). Presencial: la
+  // próxima edición desde la fecha de la venta (o la última si ya pasaron todas). Siempre
+  // tiene que ser una edición que ya exista: no se crean desde la importación.
+  const defaultEdition =
+    modality === "online"
+      ? (editions?.find((e) => e.start_date.slice(0, 7) === sale.paymentDate.slice(0, 7)) ?? editions?.[0])
+      : (editions?.find((e) => e.start_date >= sale.paymentDate) ?? editions?.[editions.length - 1]);
   const [editionChoice, setEditionChoice] = useState<string | null>(null);
-  const editionSelection = editionChoice ?? sameMonthEdition?.id ?? "new";
+  const editionSelection = editionChoice ?? defaultEdition?.id ?? "";
   const selectedEdition = editions?.find((e) => e.id === editionSelection) ?? null;
+
+  const { data: occupancy } = useQuery({
+    queryKey: ["tiendup-occupancy", selectedEdition?.id],
+    queryFn: () => getOccupancy(selectedEdition!.id),
+    enabled: modality === "presencial" && Boolean(selectedEdition),
+  });
 
   const { data: alreadyEnrolled } = useQuery({
     queryKey: ["tiendup-enrolled", studentSelection, editionSelection],
@@ -326,15 +348,14 @@ function ReviewCard({
         existingStudentId: existing ? existing.student.id : null,
         newStudent: existing ? null : form,
         courseTypeId,
-        editionId: selectedEdition ? selectedEdition.id : null,
-        newEditionName,
+        modality,
+        editionId: selectedEdition!.id,
         salesResponsible: profile?.id ?? null,
       }),
     onSuccess: (result) => {
-      saveCourse(sale.productName, courseTypeId);
+      saveCourse(sale.productName, { courseTypeId, modality });
       const parts = [
         result.createdStudent ? "alumna nueva" : "alumna existente",
-        result.createdEdition ? `edición ${newEditionName} creada` : null,
         result.paymentRegistered ? "pago registrado" : "sin pago",
       ].filter(Boolean);
       onLoaded(`Cargada (${parts.join(", ")})`);
@@ -348,6 +369,14 @@ function ReviewCard({
   if (sale.currency !== "ARS") blockers.push(`La venta es en ${sale.currency}: por ahora solo se importan ventas en pesos.`);
   if (!courseTypeId) blockers.push("Elegí a qué curso corresponde.");
   if (nameMissing) blockers.push("Faltan el nombre o el apellido de la alumna.");
+  if (courseTypeId && editions && !selectedEdition) {
+    blockers.push(
+      `Este curso no tiene ninguna edición ${modality === "online" ? "online" : "presencial abierta"}: tiene que existir antes de importar la venta (creala en Cursos).`
+    );
+  }
+  if (occupancy && occupancy.available <= 0) {
+    blockers.push("La edición presencial está completa (sin cupos): cargala desde la edición con la opción de superar el cupo.");
+  }
   if (alreadyEnrolled) blockers.push(`Venta #${sale.orderNumber} duplicada: esta alumna ya está inscripta en esa edición, no se carga.`);
   const busy = importMutation.isPending;
 
@@ -472,20 +501,32 @@ function ReviewCard({
             </option>
           ))}
         </Select>
+        {courseTypeId && (
+          <Select
+            value={modality}
+            onChange={(e) => {
+              setModalityChoice(e.target.value as ImportModality);
+              setEditionChoice(null);
+            }}
+          >
+            <option value="online">Modalidad: Online</option>
+            <option value="presencial">Modalidad: Presencial</option>
+          </Select>
+        )}
         {courseTypeId && editions && (
           <Select value={editionSelection} onChange={(e) => setEditionChoice(e.target.value)}>
             {editions.map((e) => (
               <option key={e.id} value={e.id}>
-                Edición online: {e.name || formatDateAR(e.start_date)}
+                {modality === "online"
+                  ? `Edición online: ${e.name || formatDateAR(e.start_date)}`
+                  : `${e.name || "Edición"} · ${formatDateAR(e.start_date)}${e.location ? ` · ${e.location}` : ""}`}
               </option>
             ))}
-            <option value="new">Crear edición online nueva: {newEditionName}</option>
           </Select>
         )}
-        {courseTypeId && editionSelection === "new" && (
+        {occupancy && modality === "presencial" && (
           <p className="text-xs text-gray-500">
-            Se crea la edición online «{newEditionName}» de {courseName} (abierta, sin cupo límite) para que cuente en
-            ese mes.
+            Cupos: {occupancy.enrolled_count}/{occupancy.max_students} ocupados.
           </p>
         )}
       </section>
@@ -494,7 +535,7 @@ function ReviewCard({
         <div className="font-medium mb-1">Se va a cargar</div>
         <div>
           Inscripción de {existing ? `${existing.student.first_name} ${existing.student.last_name}` : `${form.first_name} ${form.last_name}`.trim() || "la alumna"} en{" "}
-          {courseName ?? "—"} (online), precio final {formatMoney(sale.totalAmount)}
+          {courseName ?? "—"} ({modality === "online" ? "online" : "presencial"}), precio final {formatMoney(sale.totalAmount)}
           {sale.isPaid && sale.totalAmount > 0
             ? `, con un pago de ${formatMoney(sale.totalAmount)} del ${formatDateAR(sale.paymentDate)} (${method}).`
             : ", sin pago registrado."}
