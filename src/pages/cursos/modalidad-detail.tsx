@@ -4,10 +4,14 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   createEdition,
   getCourseType,
+  updateCourseType,
   listEditions,
   listOccupancyByType,
 } from "../../lib/api/courses";
 import { Button } from "../../components/ui/button";
+import { Dialog } from "../../components/ui/dialog";
+import { Field, TextInput, TextArea } from "../../components/ui/field";
+import { useAuth } from "../../lib/auth-context";
 import { Badge } from "../../components/ui/badge";
 import { EditionForm } from "./edition-form";
 import { formatMoney } from "../../lib/money";
@@ -31,6 +35,11 @@ export default function ModalidadDetail() {
   const tipo = searchParams.get("tipo") as EditionModality | null;
   const tipoQuery = tipo ? `?tipo=${tipo}` : "";
 
+  const { isAdmin } = useAuth();
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [duplicateFrom, setDuplicateFrom] = useState<CourseEdition | null>(null);
 
@@ -57,6 +66,24 @@ export default function ModalidadDetail() {
     enabled: Boolean(courseTypeId),
   });
 
+  const renameMutation = useMutation({
+    mutationFn: () => updateCourseType(courseTypeId!, nameDraft.trim(), descriptionDraft.trim()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course-type", courseTypeId] });
+      queryClient.invalidateQueries({ queryKey: ["course-types"] });
+      setRenaming(false);
+    },
+    onError: (err: { code?: string; message: string }) =>
+      setRenameError(err.code === "23505" ? "Ya existe otra modalidad con ese nombre." : err.message),
+  });
+
+  function startRename() {
+    setNameDraft(courseType?.name ?? "");
+    setDescriptionDraft(courseType?.description ?? "");
+    setRenameError(null);
+    setRenaming(true);
+  }
+
   const createMutation = useMutation({
     mutationFn: (input: CourseEditionInput) => createEdition(input),
     onSuccess: (edition) => {
@@ -81,6 +108,11 @@ export default function ModalidadDetail() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold text-gray-900">{courseType?.name}</h1>
+            {isAdmin && courseType && (
+              <button onClick={startRename} className="text-xs text-gray-400 hover:text-gray-700 underline">
+                Editar
+              </button>
+            )}
             {tipo && <Badge color={EDITION_MODALITY_COLORS[tipo]}>{EDITION_MODALITY_LABELS[tipo]}</Badge>}
           </div>
           {courseType?.description && (
@@ -154,6 +186,32 @@ export default function ModalidadDetail() {
           );
         })}
       </div>
+
+      <Dialog open={renaming} onClose={() => setRenaming(false)} title="Editar modalidad">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (nameDraft.trim()) renameMutation.mutate();
+          }}
+          className="space-y-4"
+        >
+          <Field label="Nombre *">
+            <TextInput required value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} />
+          </Field>
+          <Field label="Descripción">
+            <TextArea rows={3} value={descriptionDraft} onChange={(e) => setDescriptionDraft(e.target.value)} />
+          </Field>
+          {renameError && <p className="text-sm text-red-600">{renameError}</p>}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setRenaming(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={renameMutation.isPending || !nameDraft.trim()}>
+              {renameMutation.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
 
       {courseTypeId && (
         <EditionForm

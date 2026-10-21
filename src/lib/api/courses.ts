@@ -17,6 +17,17 @@ export async function createCourseType(name: string, description?: string) {
   return data as CourseType;
 }
 
+export async function updateCourseType(id: string, name: string, description?: string) {
+  const { data, error } = await supabase
+    .from("course_types")
+    .update({ name, description: description || null })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as CourseType;
+}
+
 export async function getCourseType(id: string) {
   const { data, error } = await supabase.from("course_types").select("*").eq("id", id).single();
   if (error) throw error;
