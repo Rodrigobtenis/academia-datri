@@ -84,12 +84,15 @@ export async function findStudentCandidates(sale: TiendupSale): Promise<StudentC
 
 export type ImportModality = "online" | "presencial";
 
-// Online: todas las ediciones (se elige la del mes). Presencial: solo las que todavía
-// pueden recibir inscriptas (no canceladas ni finalizadas), de la más próxima a la más lejana.
-export async function listEditionsForImport(courseTypeId: string, modality: ImportModality) {
-  let query = supabase.from("course_editions").select("*").eq("course_type_id", courseTypeId).eq("modality", modality);
-  if (modality === "presencial") query = query.not("status", "in", "(cancelado,finalizado)");
-  const { data, error } = await query.order("start_date", { ascending: modality === "presencial" });
+// Todas las ediciones del curso que no estén canceladas, de la más antigua a la más nueva.
+// Online y presencial son cursos distintos: quien llama separa por modalidad, nunca las mezcla.
+export async function listEditionsForImport(courseTypeId: string) {
+  const { data, error } = await supabase
+    .from("course_editions")
+    .select("*")
+    .eq("course_type_id", courseTypeId)
+    .neq("status", "cancelado")
+    .order("start_date", { ascending: true });
   if (error) throw error;
   return data as CourseEdition[];
 }
