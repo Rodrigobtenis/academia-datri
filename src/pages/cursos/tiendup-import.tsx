@@ -42,6 +42,37 @@ function saveCourse(productName: string, courseTypeId: string) {
   }
 }
 
+export interface DuplicateSale {
+  sale: TiendupSale;
+  of: TiendupSale;
+}
+
+// Misma persona + mismo producto más de una vez en el archivo (típico: un intento de pago
+// Pendiente y después el Pagado). Se conserva una sola venta —la pagada, y entre iguales la
+// de número más bajo— y las demás se marcan como duplicadas y no se cargan.
+function splitDuplicates(all: TiendupSale[]): { unique: TiendupSale[]; duplicates: DuplicateSale[] } {
+  const groups = new Map<string, TiendupSale[]>();
+  for (const s of all) {
+    const person = s.email.trim().toLowerCase() || normalizeText(`${s.firstName} ${s.lastName}`);
+    const k = `${person}|${normalizeText(s.productName)}`;
+    groups.set(k, [...(groups.get(k) ?? []), s]);
+  }
+  const duplicates: DuplicateSale[] = [];
+  const dropped = new Set<string>();
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const primary = [...group].sort(
+      (a, b) => Number(b.isPaid) - Number(a.isPaid) || Number(a.orderNumber) - Number(b.orderNumber)
+    )[0];
+    for (const s of group) {
+      if (s.key === primary.key) continue;
+      dropped.add(s.key);
+      duplicates.push({ sale: s, of: primary });
+    }
+  }
+  return { unique: all.filter((s) => !dropped.has(s.key)), duplicates };
+}
+
 type Outcome = { sale: TiendupSale; status: "cargada" | "saltada"; detail: string };
 
 export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -50,6 +81,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
   const [phase, setPhase] = useState<"upload" | "review" | "done">("upload");
   const [sales, setSales] = useState<TiendupSale[]>([]);
   const [alreadyImported, setAlreadyImported] = useState<TiendupSale[]>([]);
+  const [duplicates, setDuplicates] = useState<DuplicateSale[]>([]);
   const [index, setIndex] = useState(0);
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -61,6 +93,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
     setPhase("upload");
     setSales([]);
     setAlreadyImported([]);
+    setDuplicates([]);
     setIndex(0);
     setOutcomes([]);
     setLoadError(null);
@@ -86,9 +119,10 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
       }
       const imported = await listImportedOrderNumbers();
       setAlreadyImported(parsed.sales.filter((s) => imported.has(s.orderNumber)));
-      const pending = parsed.sales.filter((s) => !imported.has(s.orderNumber));
-      setSales(pending);
-      if (pending.length === 0) setLoadError("Todas las ventas de este archivo ya fueron importadas antes.");
+      const { unique, duplicates: dups } = splitDuplicates(parsed.sales.filter((s) => !imported.has(s.orderNumber)));
+      setDuplicates(dups);
+      setSales(unique);
+      if (unique.length === 0) setLoadError("No quedan ventas para cargar: todas ya se importaron o están duplicadas.");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "No se pudo leer el archivo.");
     } finally {
@@ -134,6 +168,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
               importaron antes (#{alreadyImported.map((s) => s.orderNumber).join(", #")}) y se omiten.
             </p>
           )}
+          <DuplicateNotice duplicates={duplicates} />
           {sales.length > 0 && (
             <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
               Encontré <strong>{sales.length}</strong> venta{sales.length === 1 ? "" : "s"} para revisar.
@@ -149,7 +184,6 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
         <ReviewCard
           key={sales[index].key}
           sale={sales[index]}
-          allSales={sales}
           position={index + 1}
           total={sales.length}
           courseTypes={courseTypes}
@@ -167,6 +201,7 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
             <strong>{outcomes.length - loaded}</strong> saltada{outcomes.length - loaded === 1 ? "" : "s"}
             {sales.length > outcomes.length ? `, ${sales.length - outcomes.length} sin revisar` : ""}.
           </p>
+          <DuplicateNotice duplicates={duplicates} />
           <ul className="text-sm divide-y divide-gray-100">
             {outcomes.map((o) => (
               <li key={o.sale.key} className="py-2 flex flex-wrap items-center justify-between gap-2">
@@ -186,9 +221,25 @@ export function TiendupImportDialog({ open, onClose }: { open: boolean; onClose:
   );
 }
 
+function DuplicateNotice({ duplicates }: { duplicates: DuplicateSale[] }) {
+  if (duplicates.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 space-y-1">
+      <div className="font-medium">
+        {duplicates.length === 1 ? "Venta duplicada, no se carga:" : "Ventas duplicadas, no se cargan:"}
+      </div>
+      {duplicates.map((d) => (
+        <div key={d.sale.key}>
+          Venta #{d.sale.orderNumber} ({d.sale.paymentStatus || "sin estado"}) es duplicada de la #{d.of.orderNumber} (
+          {d.of.paymentStatus || "sin estado"}) — {d.sale.firstName} {d.sale.lastName}, {d.sale.productName}.
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ReviewCard({
   sale,
-  allSales,
   position,
   total,
   courseTypes,
@@ -197,7 +248,6 @@ function ReviewCard({
   onCancel,
 }: {
   sale: TiendupSale;
-  allSales: TiendupSale[];
   position: number;
   total: number;
   courseTypes: CourseType[];
@@ -253,13 +303,6 @@ function ReviewCard({
     enabled: Boolean(existing && selectedEdition),
   });
 
-  const duplicates = allSales.filter(
-    (s) =>
-      s.key !== sale.key &&
-      s.email.trim().toLowerCase() === sale.email.trim().toLowerCase() &&
-      normalizeText(s.productName) === normalizeText(sale.productName)
-  );
-
   const importMutation = useMutation({
     mutationFn: () =>
       importSale({
@@ -289,7 +332,7 @@ function ReviewCard({
   if (sale.currency !== "ARS") blockers.push(`La venta es en ${sale.currency}: por ahora solo se importan ventas en pesos.`);
   if (!courseTypeId) blockers.push("Elegí a qué curso corresponde.");
   if (nameMissing) blockers.push("Faltan el nombre o el apellido de la alumna.");
-  if (alreadyEnrolled) blockers.push("Esta alumna ya está inscripta en esa edición.");
+  if (alreadyEnrolled) blockers.push(`Venta #${sale.orderNumber} duplicada: esta alumna ya está inscripta en esa edición, no se carga.`);
   const busy = importMutation.isPending;
 
   return (
@@ -320,12 +363,6 @@ function ReviewCard({
         )}
         {sale.isPaid && sale.totalAmount === 0 && (
           <div className="text-xs text-amber-600">Venta en $0 (sin cobro): se carga la inscripción sin registrar pago.</div>
-        )}
-        {duplicates.length > 0 && (
-          <div className="text-xs text-amber-600">
-            En este archivo hay otra venta de la misma persona y producto:{" "}
-            {duplicates.map((d) => `#${d.orderNumber} (${d.paymentStatus})`).join(", ")}.
-          </div>
         )}
       </section>
 
