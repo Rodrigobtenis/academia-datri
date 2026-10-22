@@ -29,3 +29,14 @@ export function nowInArgentina(): { day: number; month: number; year: number; da
 
   return { day, month, year, daysInMonth };
 }
+
+// Edad en años cumplidos a hoy (hora de Argentina) a partir de "YYYY-MM-DD".
+export function ageFromBirthDate(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null;
+  const [y, m, day] = birthDate.slice(0, 10).split("-").map(Number);
+  if (!y || !m || !day) return null;
+  const now = nowInArgentina();
+  let age = now.year - y;
+  if (now.month < m || (now.month === m && now.day < day)) age--;
+  return age >= 0 ? age : null;
+}

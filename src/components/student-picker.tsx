@@ -19,6 +19,7 @@ export function StudentPicker({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
 
   const { data: results } = useQuery({
     queryKey: ["students-picker", search],
@@ -32,7 +33,7 @@ export function StudentPicker({
         first_name: firstName,
         last_name: lastName,
         dni: null,
-        birth_date: null,
+        birth_date: birthDate || null,
         phone: phone || null,
         whatsapp: null,
         email: null,
@@ -67,6 +68,10 @@ export function StudentPicker({
           />
         </div>
         <TextInput placeholder="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <label className="block text-xs text-gray-500">
+          Fecha de nacimiento (para avisarte cuando cumple años)
+          <TextInput type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className="mt-1" />
+        </label>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={() => setCreatingNew(false)}>
             Volver a buscar

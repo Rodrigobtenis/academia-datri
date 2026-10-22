@@ -62,6 +62,10 @@ function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void })
           <p className="text-sm text-gray-500">Ir directo a las ediciones abiertas para inscripción ahora.</p>
         </div>
       </button>
+
+      <div className="mt-6 max-w-4xl">
+        <AlertsPanel />
+      </div>
     </div>
   );
 }

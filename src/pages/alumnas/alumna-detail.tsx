@@ -12,7 +12,7 @@ import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { StudentForm } from "./student-form";
 import { formatMoney } from "../../lib/money";
-import { formatDateAR } from "../../lib/date-ar";
+import { ageFromBirthDate, formatDateAR } from "../../lib/date-ar";
 import {
   STUDENT_SOURCE_LABELS,
   STUDENT_STATUS_LABELS,
@@ -118,7 +118,14 @@ export default function AlumnaDetail() {
             <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos personales</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <InfoRow label="DNI" value={student.dni} />
-              <InfoRow label="Fecha de nacimiento" value={student.birth_date} />
+              <InfoRow
+                label="Fecha de nacimiento"
+                value={
+                  student.birth_date
+                    ? `${formatDateAR(student.birth_date)} (${ageFromBirthDate(student.birth_date) ?? "?"} años)`
+                    : null
+                }
+              />
               <InfoRow label="Teléfono" value={student.phone} />
               <InfoRow label="WhatsApp" value={student.whatsapp} />
               <InfoRow label="Email" value={student.email} />

@@ -139,6 +139,33 @@ export async function getAlerts(): Promise<Alert[]> {
     }
   }
 
+  // Cumpleaños de hoy y de los próximos 7 días (función upcoming_birthdays, migración 0028).
+  // Si todavía no está aplicada, simplemente no hay avisos de cumpleaños.
+  const { data: birthdays } = await supabase.rpc("upcoming_birthdays", { p_days: 7 });
+  type BirthdayRow = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    next_birthday: string;
+    days_until: number;
+    turning_age: number;
+  };
+  for (const b of (birthdays ?? []) as BirthdayRow[]) {
+    const when =
+      b.days_until === 0
+        ? `Cumple ${b.turning_age} años hoy`
+        : b.days_until === 1
+          ? `Cumple ${b.turning_age} años mañana`
+          : `Cumple ${b.turning_age} años el ${formatDateAR(b.next_birthday).slice(0, 5)} (en ${b.days_until} días)`;
+    alerts.push({
+      id: `bday-${b.id}`,
+      severity: b.days_until === 0 ? "warning" : "info",
+      title: `Cumpleaños de ${b.first_name} ${b.last_name}`,
+      subtitle: when,
+      href: `/alumnas/${b.id}`,
+    });
+  }
+
   const severityOrder: Record<AlertSeverity, number> = { danger: 0, warning: 1, info: 2 };
   return alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 }
