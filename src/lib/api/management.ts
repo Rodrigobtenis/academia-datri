@@ -162,3 +162,72 @@ export async function getMonthSoldTotal(month: number, year: number) {
   if (error) throw error;
   return (data as { final_price: string }[]).reduce((a, r) => a + parseFloat(r.final_price), 0);
 }
+
+export interface BillingSummary {
+  collected: number;
+  refunds: number;
+  paymentCount: number;
+  sold: number;
+  enrollmentCount: number;
+  byMethod: Record<string, number>;
+  byDay: { date: string; collected: number; count: number }[];
+}
+
+// Facturación entre dos fechas (ambas incluidas): "cobrado" es la plata que entró según la
+// fecha real de cada pago (neto de reintegros, igual criterio que Cobranza); "vendido" son
+// las inscripciones nuevas del período (no canceladas) a su precio final.
+export async function getBillingSummary(from: string, to: string): Promise<BillingSummary> {
+  type PaymentRow = { payment_date: string; amount: string; payment_method: string };
+  const payments: PaymentRow[] = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("payments")
+      .select("payment_date, amount, payment_method")
+      .eq("status", "valido")
+      .gte("payment_date", from)
+      .lte("payment_date", to)
+      .order("payment_date", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    payments.push(...(data as PaymentRow[]));
+    if ((data?.length ?? 0) < pageSize) break;
+  }
+
+  // Las altas se cuentan por el día de Argentina (UTC-3) en que se crearon.
+  const { data: enrollments, error: enrollmentsError } = await supabase
+    .from("enrollments")
+    .select("final_price")
+    .neq("status", "cancelada")
+    .gte("created_at", `${from}T00:00:00-03:00`)
+    .lt("created_at", `${nextDayISO(to)}T00:00:00-03:00`);
+  if (enrollmentsError) throw enrollmentsError;
+
+  const byMethod: Record<string, number> = {};
+  const dayMap = new Map<string, { collected: number; count: number }>();
+  let collected = 0;
+  let refunds = 0;
+  for (const p of payments) {
+    const amount = parseFloat(p.amount);
+    collected += amount;
+    if (amount < 0) refunds += -amount;
+    byMethod[p.payment_method] = (byMethod[p.payment_method] ?? 0) + amount;
+    const day = dayMap.get(p.payment_date) ?? { collected: 0, count: 0 };
+    day.collected += amount;
+    day.count += 1;
+    dayMap.set(p.payment_date, day);
+  }
+
+  return {
+    collected,
+    refunds,
+    paymentCount: payments.length,
+    sold: (enrollments as { final_price: string }[]).reduce((a, r) => a + parseFloat(r.final_price), 0),
+    enrollmentCount: enrollments.length,
+    byMethod,
+    byDay: Array.from(dayMap.entries())
+      .sort(([a], [b]) => (a < b ? 1 : -1))
+      .map(([date, v]) => ({ date, ...v })),
+  };
+}

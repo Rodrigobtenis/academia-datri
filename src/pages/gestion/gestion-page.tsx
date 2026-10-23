@@ -13,6 +13,7 @@ import { listProfitability } from "../../lib/api/profitability";
 import { listGoalProgressHistory } from "../../lib/api/goals";
 import { GoalProgressCard } from "../../components/goal-progress-card";
 import { GoalBar } from "../../components/goal-bar";
+import { BillingPanel } from "./billing-panel";
 import { TextInput, Select } from "../../components/ui/field";
 import { formatMoney, sumMoney } from "../../lib/money";
 import { formatDateAR } from "../../lib/date-ar";
@@ -92,6 +93,8 @@ export default function GestionPage() {
         <h1 className="text-lg font-semibold text-gray-900">Gestión</h1>
         <p className="text-sm text-gray-500">Panel privado — solo vos lo ves.</p>
       </div>
+
+      <BillingPanel />
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
