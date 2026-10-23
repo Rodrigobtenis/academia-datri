@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getBillingSummary, getCourseTypeSummaryRange } from "../../lib/api/management";
-import { TextInput } from "../../components/ui/field";
+import { Select, TextInput } from "../../components/ui/field";
 import { formatMoney } from "../../lib/money";
 import { formatDateAR, nowInArgentina } from "../../lib/date-ar";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../types/payment";
@@ -58,21 +58,22 @@ export function BillingPanel() {
   const [preset, setPreset] = useState<Preset>("hoy");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [method, setMethod] = useState<PaymentMethod | "">("");
 
   const range = preset === "rango" ? { from: customFrom, to: customTo } : rangeFor(preset);
   const validRange = Boolean(range.from && range.to && range.from <= range.to);
   const singleDay = range.from === range.to;
 
   const { data: summary, isFetching } = useQuery({
-    queryKey: ["billing-summary", range.from, range.to],
-    queryFn: () => getBillingSummary(range.from, range.to),
+    queryKey: ["billing-summary", range.from, range.to, method],
+    queryFn: () => getBillingSummary(range.from, range.to, method || undefined),
     enabled: validRange,
   });
 
   const { data: courses } = useQuery({
     queryKey: ["billing-courses", range.from, range.to],
     queryFn: () => getCourseTypeSummaryRange(range.from, range.to),
-    enabled: validRange,
+    enabled: validRange && !method,
   });
 
   const methods = Object.entries(summary?.byMethod ?? {}).sort((a, b) => b[1] - a[1]);
@@ -97,6 +98,18 @@ export function BillingPanel() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-gray-500">Medio de pago</span>
+        <Select value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod | "")} className="!w-auto !py-1.5">
+          <option value="">Todos</option>
+          {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {preset === "rango" && (
@@ -127,6 +140,7 @@ export function BillingPanel() {
             {singleDay
               ? `Movimientos del ${formatDateAR(range.from)}.`
               : `Movimientos entre el ${formatDateAR(range.from)} y el ${formatDateAR(range.to)} (ambos incluidos).`}
+            {method ? ` Solo pagos con ${PAYMENT_METHOD_LABELS[method]}.` : ""}
             {isFetching ? " Actualizando..." : ""}
           </p>
 
@@ -140,7 +154,11 @@ export function BillingPanel() {
             <Stat
               label="Vendido"
               value={formatMoney(summary?.sold ?? 0)}
-              sub={`${summary?.enrollmentCount ?? 0} inscripcion${summary?.enrollmentCount === 1 ? "" : "es"} nueva${summary?.enrollmentCount === 1 ? "" : "s"}`}
+              sub={
+                method
+                  ? "total del período, no se filtra por medio de pago"
+                  : `${summary?.enrollmentCount ?? 0} inscripcion${summary?.enrollmentCount === 1 ? "" : "es"} nueva${summary?.enrollmentCount === 1 ? "" : "s"}`
+              }
             />
             <Stat label="Pagos registrados" value={String(summary?.paymentCount ?? 0)} />
             <Stat
@@ -177,7 +195,20 @@ export function BillingPanel() {
 
             <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
               <h3 className="text-xs font-semibold uppercase text-gray-500 mb-3">Por curso</h3>
-              {activeCourses.length === 0 ? (
+              {method ? (
+                (summary?.byCourse.length ?? 0) === 0 ? (
+                  <p className="text-sm text-gray-400">Sin cobros en este período.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 text-sm">
+                    {summary?.byCourse.map((c) => (
+                      <div key={c.name} className="py-2 flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="font-medium text-gray-900">{c.name}</span>
+                        <span className="text-gray-900 font-medium">{formatMoney(c.collected)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : activeCourses.length === 0 ? (
                 <p className="text-sm text-gray-400">Sin actividad en este período.</p>
               ) : (
                 <div className="divide-y divide-gray-100 text-sm">

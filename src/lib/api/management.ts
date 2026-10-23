@@ -170,28 +170,36 @@ export interface BillingSummary {
   sold: number;
   enrollmentCount: number;
   byMethod: Record<string, number>;
+  byCourse: { name: string; collected: number }[];
   byDay: { date: string; collected: number; count: number }[];
 }
 
 // Facturación entre dos fechas (ambas incluidas): "cobrado" es la plata que entró según la
 // fecha real de cada pago (neto de reintegros, igual criterio que Cobranza); "vendido" son
 // las inscripciones nuevas del período (no canceladas) a su precio final.
-export async function getBillingSummary(from: string, to: string): Promise<BillingSummary> {
-  type PaymentRow = { payment_date: string; amount: string; payment_method: string };
+export async function getBillingSummary(from: string, to: string, method?: string): Promise<BillingSummary> {
+  type PaymentRow = {
+    payment_date: string;
+    amount: string;
+    payment_method: string;
+    enrollments: { course_editions: { course_types: { name: string } | null } | null } | null;
+  };
   const payments: PaymentRow[] = [];
   const pageSize = 1000;
   for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("payments")
-      .select("payment_date, amount, payment_method")
+      .select("payment_date, amount, payment_method, enrollments(course_editions(course_types(name)))")
       .eq("status", "valido")
       .gte("payment_date", from)
-      .lte("payment_date", to)
+      .lte("payment_date", to);
+    if (method) query = query.eq("payment_method", method);
+    const { data, error } = await query
       .order("payment_date", { ascending: true })
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
-    payments.push(...(data as PaymentRow[]));
+    payments.push(...(data as unknown as PaymentRow[]));
     if ((data?.length ?? 0) < pageSize) break;
   }
 
@@ -205,6 +213,7 @@ export async function getBillingSummary(from: string, to: string): Promise<Billi
   if (enrollmentsError) throw enrollmentsError;
 
   const byMethod: Record<string, number> = {};
+  const courseMap = new Map<string, number>();
   const dayMap = new Map<string, { collected: number; count: number }>();
   let collected = 0;
   let refunds = 0;
@@ -213,6 +222,8 @@ export async function getBillingSummary(from: string, to: string): Promise<Billi
     collected += amount;
     if (amount < 0) refunds += -amount;
     byMethod[p.payment_method] = (byMethod[p.payment_method] ?? 0) + amount;
+    const courseName = p.enrollments?.course_editions?.course_types?.name ?? "Sin curso";
+    courseMap.set(courseName, (courseMap.get(courseName) ?? 0) + amount);
     const day = dayMap.get(p.payment_date) ?? { collected: 0, count: 0 };
     day.collected += amount;
     day.count += 1;
@@ -226,6 +237,9 @@ export async function getBillingSummary(from: string, to: string): Promise<Billi
     sold: (enrollments as { final_price: string }[]).reduce((a, r) => a + parseFloat(r.final_price), 0),
     enrollmentCount: enrollments.length,
     byMethod,
+    byCourse: Array.from(courseMap.entries())
+      .map(([name, collected]) => ({ name, collected }))
+      .sort((a, b) => b.collected - a.collected),
     byDay: Array.from(dayMap.entries())
       .sort(([a], [b]) => (a < b ? 1 : -1))
       .map(([date, v]) => ({ date, ...v })),
