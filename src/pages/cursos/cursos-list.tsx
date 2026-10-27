@@ -10,6 +10,7 @@ import { AlertsPanel } from "../../components/alerts-panel";
 import { IconCalendar, IconMonitor, IconBolt, IconCap } from "../../components/icons";
 import { EDITION_MODALITY_LABELS, type EditionModality } from "../../types/course";
 import { TiendupImportDialog } from "./tiendup-import";
+import { RecentMovementsCard } from "../../components/payment-movements";
 
 function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void }) {
   const navigate = useNavigate();
@@ -63,7 +64,8 @@ function CategoryPicker({ onPick }: { onPick: (tipo: EditionModality) => void })
         </div>
       </button>
 
-      <div className="mt-6 max-w-4xl">
+      <div className="mt-6 max-w-4xl space-y-6">
+        <RecentMovementsCard />
         <AlertsPanel />
       </div>
     </div>

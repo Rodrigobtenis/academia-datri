@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getBillingSummary, getCourseTypeSummaryRange } from "../../lib/api/management";
 import { Select, TextInput } from "../../components/ui/field";
 import { formatMoney } from "../../lib/money";
-import { formatDateAR, nowInArgentina } from "../../lib/date-ar";
+import { formatDateAR } from "../../lib/date-ar";
+import { quickRange } from "../../lib/date-range";
+import { MovementsList } from "../../components/payment-movements";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../types/payment";
 
 type Preset = "hoy" | "ayer" | "semana" | "mes" | "rango";
@@ -15,34 +17,6 @@ const PRESET_LABELS: Record<Preset, string> = {
   mes: "Este mes",
   rango: "Entre fechas",
 };
-
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
-
-function isoFromParts(y: number, m: number, d: number) {
-  return `${y}-${pad(m)}-${pad(d)}`;
-}
-
-function addDays(iso: string, days: number) {
-  const [y, m, d] = iso.split("-").map(Number);
-  const t = new Date(Date.UTC(y, m - 1, d + days));
-  return isoFromParts(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate());
-}
-
-function rangeFor(preset: Exclude<Preset, "rango">): { from: string; to: string } {
-  const { day, month, year } = nowInArgentina();
-  const today = isoFromParts(year, month, day);
-  if (preset === "hoy") return { from: today, to: today };
-  if (preset === "ayer") {
-    const y = addDays(today, -1);
-    return { from: y, to: y };
-  }
-  if (preset === "mes") return { from: isoFromParts(year, month, 1), to: today };
-  // Semana: de lunes a hoy.
-  const dow = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0 = domingo
-  return { from: addDays(today, -((dow + 6) % 7)), to: today };
-}
 
 function Stat({ label, value, sub, strong }: { label: string; value: string; sub?: string; strong?: boolean }) {
   return (
@@ -60,7 +34,7 @@ export function BillingPanel() {
   const [customTo, setCustomTo] = useState("");
   const [method, setMethod] = useState<PaymentMethod | "">("");
 
-  const range = preset === "rango" ? { from: customFrom, to: customTo } : rangeFor(preset);
+  const range = preset === "rango" ? { from: customFrom, to: customTo } : quickRange(preset);
   const validRange = Boolean(range.from && range.to && range.from <= range.to);
   const singleDay = range.from === range.to;
 
@@ -224,6 +198,11 @@ export function BillingPanel() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
+            <h3 className="text-xs font-semibold uppercase text-gray-500 mb-3">Movimientos del período</h3>
+            <MovementsList from={range.from} to={range.to} method={method || undefined} />
           </div>
 
           {!singleDay && summary && summary.byDay.length > 0 && (
