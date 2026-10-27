@@ -14,6 +14,7 @@ import {
   IconWallet,
   IconGear,
   IconMenu,
+  IconReceipt,
 } from "./icons";
 
 const mainNav = [
@@ -23,6 +24,7 @@ const mainNav = [
   { to: "/modelos", label: "Modelos", icon: IconCamera },
   { to: "/crm", label: "CRM", icon: IconChat },
   { to: "/comisiones", label: "Comisiones", icon: IconPercent },
+  { to: "/facturacion", label: "Facturación", icon: IconReceipt },
   { to: "/gastos", label: "Gastos", icon: IconWallet },
 ];
 

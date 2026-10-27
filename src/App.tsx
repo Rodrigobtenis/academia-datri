@@ -21,6 +21,8 @@ import GastosPage from "./pages/gastos/gastos-page";
 import AgendaPage from "./pages/agenda/agenda-page";
 import ReportesPage from "./pages/reportes/reportes-page";
 import ModelosList from "./pages/modelos/modelos-list";
+import FacturacionPage from "./pages/facturacion/facturacion-page";
+import FacturaPrintPage from "./pages/facturacion/factura-print";
 // Turnos/autoagenda quedan en pausa (código intacto en src/pages/turnos y
 // src/pages/public/reservar-page.tsx) pero fuera del front hasta que se retomen.
 
@@ -50,6 +52,15 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
 
             <Route
+              path="/facturas/:id/imprimir"
+              element={
+                <RequireAuth>
+                  <FacturaPrintPage />
+                </RequireAuth>
+              }
+            />
+
+            <Route
               element={
                 <RequireAuth>
                   <AppLayout />
@@ -72,6 +83,7 @@ export default function App() {
               <Route path="/inscripciones/:enrollmentId" element={<InscripcionDetail />} />
               <Route path="/crm" element={<CrmPage />} />
               <Route path="/comisiones" element={<ComisionesPage />} />
+              <Route path="/facturacion" element={<FacturacionPage />} />
               <Route path="/gastos" element={<GastosPage />} />
 
               <Route

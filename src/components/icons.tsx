@@ -162,3 +162,12 @@ export function IconBolt({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconReceipt({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={base} className={className}>
+      <path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8v-17Z" strokeLinejoin="round" />
+      <path d="M9 8.5h6M9 12h6" strokeLinecap="round" />
+    </svg>
+  );
+}
