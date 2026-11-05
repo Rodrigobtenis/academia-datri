@@ -23,6 +23,7 @@ export default function ConfiguracionPage() {
   const [goalYear, setGoalYear] = useState(now.getFullYear());
   const [targetAmount, setTargetAmount] = useState("");
   const [goalName, setGoalName] = useState("");
+  const [savedGoal, setSavedGoal] = useState<string | null>(null);
 
   const [newRate, setNewRate] = useState("");
   const [effectiveFrom, setEffectiveFrom] = useState(now.toISOString().slice(0, 10));
@@ -75,6 +76,8 @@ export default function ConfiguracionPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goal-progress"] });
+      queryClient.invalidateQueries({ queryKey: ["mgmt-goal-history"] });
+      setSavedGoal(`${MONTHS[goalMonth - 1]} ${goalYear}`);
       setTargetAmount("");
       setGoalName("");
     },
@@ -156,13 +159,19 @@ export default function ConfiguracionPage() {
 
           {currentGoal && (
             <p className="text-xs text-gray-400">
-              Objetivo actual de {MONTHS[goalMonth - 1]} {goalYear}: {formatMoney(currentGoal.target_amount)}
+              Objetivo de {MONTHS[goalMonth - 1]} {goalYear}: {formatMoney(currentGoal.target_amount)}
+              {currentGoal.inherited_from
+                ? ` (repetido de ${MONTHS[currentGoal.inherited_from.month - 1]} ${currentGoal.inherited_from.year}: este mes no tiene uno propio)`
+                : ""}
             </p>
           )}
 
           <Button type="submit" disabled={goalMutation.isPending}>
             {goalMutation.isPending ? "Guardando..." : "Guardar objetivo"}
           </Button>
+          {savedGoal && !goalMutation.isPending && (
+            <p className="text-sm text-emerald-600">Objetivo de {savedGoal} guardado. Se mantiene en los meses siguientes hasta que lo cambies.</p>
+          )}
         </form>
       </section>
 

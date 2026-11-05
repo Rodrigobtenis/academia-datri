@@ -137,7 +137,7 @@ export default function GestionPage() {
 
       <section>
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Objetivo del mes</h2>
-        <GoalProgressCard />
+        <GoalProgressCard month={month} year={year} />
       </section>
 
       <section>

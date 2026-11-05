@@ -164,7 +164,7 @@ export default function ComisionesPage() {
       </div>
 
       <div className="mb-6">
-        <GoalProgressCard compact />
+        <GoalProgressCard compact month={month} year={year} />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

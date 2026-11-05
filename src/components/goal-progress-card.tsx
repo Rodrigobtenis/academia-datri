@@ -4,9 +4,26 @@ import { formatMoney } from "../lib/money";
 import { nowInArgentina } from "../lib/date-ar";
 import { goalState, GOAL_STATE_COLORS, GOAL_STATE_LABELS } from "../types/goal";
 import { GoalBar } from "./goal-bar";
+import { MONTHS } from "../lib/months";
 
-export function GoalProgressCard({ compact }: { compact?: boolean }) {
-  const { day, month, year, daysInMonth } = nowInArgentina();
+// Objetivo de un mes (por defecto el actual). Sigue el mes que se elija en la pantalla donde se use.
+export function GoalProgressCard({
+  compact,
+  month: monthProp,
+  year: yearProp,
+}: {
+  compact?: boolean;
+  month?: number;
+  year?: number;
+}) {
+  const now = nowInArgentina();
+  const month = monthProp ?? now.month;
+  const year = yearProp ?? now.year;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  // Mes pasado: ya transcurrió entero. Mes futuro: todavía no empezó. Mes actual: el día de hoy.
+  const monthIndex = year * 12 + month;
+  const nowIndex = now.year * 12 + now.month;
+  const day = monthIndex < nowIndex ? daysInMonth : monthIndex > nowIndex ? 0 : now.day;
 
   const { data: progress, isLoading } = useQuery({
     queryKey: ["goal-progress", month, year],
@@ -24,7 +41,7 @@ export function GoalProgressCard({ compact }: { compact?: boolean }) {
   if (!progress) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-5 text-sm text-gray-400">
-        Todavía no se definió un objetivo para este mes.
+        Todavía no se definió ningún objetivo. Cargalo en Configuración.
       </div>
     );
   }
@@ -56,6 +73,12 @@ export function GoalProgressCard({ compact }: { compact?: boolean }) {
         </span>
       </div>
 
+      {progress.inherited_from && (
+        <p className="text-xs text-gray-400 mb-2">
+          Se repite el objetivo de {MONTHS[progress.inherited_from.month - 1]} {progress.inherited_from.year}: este mes todavía no tiene
+          uno propio. Podés cambiarlo en Configuración.
+        </p>
+      )}
       <div className="mb-1">
         <GoalBar percent={percent} expectedPercent={expectedPercent} />
       </div>

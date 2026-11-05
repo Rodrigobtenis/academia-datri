@@ -18,6 +18,8 @@ export interface GoalProgress {
   collected: string;
   remaining: string;
   percent_complete: number | null;
+  // Si el mes todavía no tiene objetivo propio, se repite el último definido: de qué mes viene.
+  inherited_from?: { month: number; year: number } | null;
 }
 
 export type GoalState = "bajo" | "en_camino" | "muy_cerca" | "cumplido";
